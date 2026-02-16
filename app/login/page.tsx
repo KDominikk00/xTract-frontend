@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FaGoogle, FaFacebookF, FaApple } from "react-icons/fa";
+import { motion, easeOut } from "framer-motion";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -23,8 +24,13 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex items-center justify-center px-6 bg-(--color-bg) text-white min-h-screen">
-      <div className="w-full max-w-md border border-blue-500 rounded-xl shadow-md p-8 bg-gradient-to-br from-[#0e111a] to-[#1a1f2a] hover:shadow-lg transition-shadow">
+    <motion.main
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: easeOut }}>
+
+    <main className="flex items-center justify-center px-6 bg-(--color-bg) text-white min-h-[calc(100vh-12rem)] sm:min-h-screen">
+      <div className="w-full max-w-md border border-blue-500 rounded-xl shadow-md p-8 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] hover:shadow-lg transition-shadow">
         <h2 className="text-3xl font-bold mb-6 text-blue-500 text-center">
           Log In
         </h2>
@@ -68,9 +74,9 @@ export default function LoginPage() {
         </form>
 
         <div className="flex items-center my-6">
-          <hr className="flex-grow border-zinc-600" />
+          <hr className="grow border-zinc-600" />
           <span className="mx-2 text-zinc-400 text-sm">or continue with</span>
-          <hr className="flex-grow border-zinc-600" />
+          <hr className="grow border-zinc-600" />
         </div>
 
         <div className="flex flex-col gap-3">
@@ -107,5 +113,6 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+    </motion.main>
   );
 }
