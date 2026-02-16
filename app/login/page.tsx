@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FaGoogle, FaFacebookF, FaApple } from "react-icons/fa";
-import { motion, easeOut } from "framer-motion";
+import PageLayout from "@/components/PageLayout";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -24,11 +24,7 @@ export default function LoginPage() {
   };
 
   return (
-    <motion.main
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: easeOut }}>
-
+    <PageLayout>
     <main className="flex items-center justify-center px-6 bg-(--color-bg) text-white min-h-[calc(100vh-12rem)] sm:min-h-screen">
       <div className="w-full max-w-md border border-blue-500 rounded-xl shadow-md p-8 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] hover:shadow-lg transition-shadow">
         <h2 className="text-3xl font-bold mb-6 text-blue-500 text-center">
@@ -113,6 +109,6 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
-    </motion.main>
+    </PageLayout>
   );
 }

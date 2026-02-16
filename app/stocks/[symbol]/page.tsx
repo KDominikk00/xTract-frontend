@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { motion, easeOut } from "framer-motion";
+import PageLayout from "@/components/PageLayout";
 
 interface StockData {
   name: string;
@@ -59,12 +59,7 @@ export default function StockPage() {
   }, [stockSymbol]);
 
   return (
-    <motion.main
-      className="max-w-7xl mx-auto px-6 py-16 text-white"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: easeOut }}
-    >
+    <PageLayout className="max-w-7xl mx-auto px-6 py-16 text-white">
       {loading ? (
         <p className="text-center text-gray-400">Loading {stockSymbol} data...</p>
       ) : (
@@ -196,6 +191,6 @@ export default function StockPage() {
           </div>
         </>
       )}
-    </motion.main>
+    </PageLayout>
   );
 }

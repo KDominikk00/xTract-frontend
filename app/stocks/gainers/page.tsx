@@ -1,5 +1,6 @@
 "use client";
 
+import PageLayout from "@/components/PageLayout";
 import { motion, easeOut } from "framer-motion";
 
 interface Stock {
@@ -25,12 +26,7 @@ export default function TopGainersPage() {
   ];
 
   return (
-    <motion.main
-      className="max-w-7xl mx-auto px-6 py-16 text-white"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: easeOut }}
-    >
+    <PageLayout className="max-w-7xl mx-auto px-6 py-16 text-white">
       <h1 className="text-4xl font-bold text-blue-500 mb-8">Top Gainers Today</h1>
 
       <div className="overflow-x-auto">
@@ -67,6 +63,6 @@ export default function TopGainersPage() {
           </tbody>
         </table>
       </div>
-    </motion.main>
+    </PageLayout>
   );
 }
