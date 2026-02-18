@@ -1,14 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/AuthProvider";
 import { motion, easeOut } from "framer-motion";
 import Link from "next/link";
 import { FiCheck, FiX } from "react-icons/fi";
+import { getGainers, getLosers, Stock } from "@/lib/fetchStock";
 
 const containerVariants = {
   hidden: {},
-  show: {
-    transition: {
+  show: { 
+    transition: { 
       staggerChildren: 0.15,
     },
   },
@@ -23,122 +25,126 @@ export default function Home() {
   const { user } = useAuth();
   const isFreeTier = true; // Placeholder
 
+  const [topGainers, setTopGainers] = useState<Stock[]>([]);
+  const [topLosers, setTopLosers] = useState<Stock[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStocks() {
+      try {
+        setLoading(true);
+        const [gainers, losers] = await Promise.all([getGainers(), getLosers()]);
+        setTopGainers(Array.isArray(gainers) ? gainers : []);
+        setTopLosers(Array.isArray(losers) ? losers : []);
+      } catch (err) {
+        console.error(err);
+        setTopGainers([]);
+        setTopLosers([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStocks();
+  }, []);
+
+  const renderStockList = (stocks: Stock[]) => {
+    if (!stocks || stocks.length === 0) return <p>No data available</p>;
+    return (
+      <ul className="space-y-4 text-xl">
+        {stocks.map((stock) => (
+          <li key={stock.symbol}>
+            {stock.symbol} ({stock.name}) ${stock.price.toFixed(2)}{" "}
+            <span className={`text-xs ${stock.changePercent >= 0 ? "text-green-500" : "text-red-500"}`}>
+              {stock.changePercent >= 0 ? "+" : ""}
+              {stock.changePercent.toFixed(2)}%
+            </span>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
   return (
     <motion.main
       className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-(--color-bg) min-h-2 sm:max-w-5xl m-4 my-20 sm:m-24 sm:mx-auto"
       initial="hidden"
       animate="show"
       variants={containerVariants}
+    >
+      <Link
+        href="/followed"
+        className="sm:col-span-4 min-h-56 border border-blue-500 rounded-xl shadow-md p-6 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg transition-shadow"
       >
-      <Link 
-      href="/followed" 
-      className="sm:col-span-4 min-h-56 border border-blue-500 rounded-xl shadow-md p-6 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg transition-shadow">
-      <motion.div
-      variants={cardVariants}
-      >
-        <h2 className="text-2xl font-bold mb-4 text-blue-500">Followed Stocks</h2>
-        <ul className="space-y-2">
-          <li className="text-gray-500">
-            Follow stocks to get live updates
-          </li>
-        </ul>
-      </motion.div>
+        <motion.div variants={cardVariants}>
+          <h2 className="text-2xl font-bold mb-4 text-blue-500">Followed Stocks</h2>
+          <ul className="space-y-2 text-gray-500">
+            <li>Follow stocks to get live updates</li>
+          </ul>
+        </motion.div>
       </Link>
 
       <Link
         href="/news"
-        className="block sm:col-span-3 min-h-56 border border-blue-500 rounded-xl shadow-md p-6 
-                  bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg 
-                  transition-shadow cursor-pointer">
+        className="block sm:col-span-3 min-h-56 border border-blue-500 rounded-xl shadow-md p-6 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg transition-shadow cursor-pointer"
+      >
         <motion.div variants={cardVariants}>
-          <div>
-            <h2 className="text-2xl font-bold mb-4 text-blue-500">Trending News</h2>
-            <ul className="space-y-4 text-xl">
-              <li>
-                Market rallies as tech stocks climb{" "}
-                <span className="text-gray-500 text-xs block sm:inline sm:ml-2">thedailywire.com</span>
-              </li>
-              <li>
-                Federal Reserve announces new policy{" "}
-                <span className="text-gray-500 text-xs block sm:inline sm:ml-2">thedailywire.com</span>
-              </li>
-              <li>
-                Elon Musk teases new Tesla product{" "}
-                <span className="text-gray-500 text-xs block sm:inline sm:ml-2">thedailywire.com</span>
-              </li>
-            </ul>
-          </div>
+          <h2 className="text-2xl font-bold mb-4 text-blue-500">Trending News</h2>
+          <ul className="space-y-4 text-xl">
+            <li>
+              Market rallies as tech stocks climb{" "}
+              <span className="text-gray-500 text-xs block sm:inline sm:ml-2">thedailywire.com</span>
+            </li>
+            <li>
+              Federal Reserve announces new policy{" "}
+              <span className="text-gray-500 text-xs block sm:inline sm:ml-2">thedailywire.com</span>
+            </li>
+            <li>
+              Elon Musk teases new Tesla product{" "}
+              <span className="text-gray-500 text-xs block sm:inline sm:ml-2">thedailywire.com</span>
+            </li>
+          </ul>
         </motion.div>
       </Link>
 
       <Link
         href="/summary"
-        className="block col-span-1 min-h-56 border border-blue-500 rounded-xl shadow-md p-6 
-                  bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg 
-                  transition-shadow cursor-pointer">
+        className="block col-span-1 min-h-56 border border-blue-500 rounded-xl shadow-md p-6 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg transition-shadow cursor-pointer"
+      >
         <motion.div variants={cardVariants}>
-          <div>
-            <h2 className="text-2xl font-bold mb-4 text-blue-500">Market Summary</h2>
-            <ul className="space-y-4 text-xl">
-              <li>
-                S&amp;P 500: 4250 <span className="text-xs text-red-500">(-6.7%)</span>
-              </li>
-              <li>
-                DOW 10000 <span className="text-xs text-red-500">(-6.7%)</span>
-              </li>
-              <li>
-                NASDAQ 6969 <span className="text-xs text-red-500">(-6.7%)</span>
-              </li>
-            </ul>
-          </div>
+          <h2 className="text-2xl font-bold mb-4 text-blue-500">Market Summary</h2>
+          <ul className="space-y-4 text-xl">
+            <li>S&amp;P 500: 4250 <span className="text-xs text-red-500">(-6.7%)</span></li>
+            <li>DOW 10000 <span className="text-xs text-red-500">(-6.7%)</span></li>
+            <li>NASDAQ 6969 <span className="text-xs text-red-500">(-6.7%)</span></li>
+          </ul>
         </motion.div>
       </Link>
 
-      <Link 
-      href="/stocks/losers"
-      className="sm:col-span-2 border border-blue-500 rounded-xl shadow-md p-6 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg transition-shadow">
-      <motion.div
-        variants={cardVariants}
+      <Link
+        href="/stocks/losers"
+        className="sm:col-span-2 border border-blue-500 rounded-xl shadow-md p-6 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg transition-shadow"
       >
-        <h2 className="text-2xl font-bold mb-4 text-blue-500">Top Losers Today</h2>
-        <ul className="space-y-4 text-xl">
-          <li>
-            NVIDIA (NVDA) $100.69 <span className="text-xs text-green-500">(+3.4%)</span>
-          </li>
-          <li>
-            NVIDIA (NVDA) $100.69 <span className="text-xs text-green-500">(+3.4%)</span>
-          </li>
-          <li>
-            NVIDIA (NVDA) $100.69 <span className="text-xs text-green-500">(+3.4%)</span>
-          </li>
-        </ul>
-      </motion.div>
+        <motion.div variants={cardVariants}>
+          <h2 className="text-2xl font-bold mb-4 text-blue-500">Top Losers Today</h2>
+          {loading ? <p>Loading...</p> : renderStockList(topLosers)}
+        </motion.div>
       </Link>
 
-      <Link href="stocks/gainers" className="sm:col-span-2 min-h-56 border border-blue-500 rounded-xl shadow-md p-6 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg transition-shadow">
-      <motion.div
-      variants={cardVariants}
+      <Link
+        href="/stocks/gainers"
+        className="sm:col-span-2 min-h-56 border border-blue-500 rounded-xl shadow-md p-6 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg transition-shadow"
       >
-        <h2 className="text-2xl font-bold mb-4 text-blue-500">Top Gainers Today</h2>
-        <ul className="space-y-4 text-xl">
-          <li>
-            NVIDIA (NVDA) $100.69 <span className="text-xs text-green-500">(+3.4%)</span>
-          </li>
-          <li>
-            NVIDIA (NVDA) $100.69 <span className="text-xs text-green-500">(+3.4%)</span>
-          </li>
-          <li>
-            NVIDIA (NVDA) $100.69 <span className="text-xs text-green-500">(+3.4%)</span>
-          </li>
-        </ul>
-      </motion.div>
+        <motion.div variants={cardVariants}>
+          <h2 className="text-2xl font-bold mb-4 text-blue-500">Top Gainers Today</h2>
+          {loading ? <p>Loading...</p> : renderStockList(topGainers)}
+        </motion.div>
       </Link>
 
       <div className="sm:col-span-4 mt-16 px-4 md:px-0">
         <h2 className="text-3xl font-bold text-white text-center mb-12">
           Choose Your Plan
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mx-10 md:mx-auto">
           
           <div className="flex flex-col border border-blue-500 rounded-2xl p-10 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] shadow-md hover:shadow-lg transition-shadow">
             <h3 className="text-xl font-bold text-blue-500 mb-2">Free</h3>
