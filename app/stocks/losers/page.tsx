@@ -4,15 +4,7 @@ import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
 import { motion, easeOut } from "framer-motion";
 import { useRouter } from "next/navigation";
-
-interface Stock {
-  symbol: string;
-  name: string;
-  price: number;
-  change: number;
-  changePercent: number;
-  exchange: string;
-}
+import { getLosers, Stock } from "@/lib/fetchStock"; // ✅ use helper
 
 const rowVariants = {
   hidden: { opacity: 0, y: 10 },
@@ -25,25 +17,11 @@ export default function TopLosersPage() {
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchLosers() {
+    async function fetchLosersData() {
       try {
         setLoading(true);
-
-        const res = await fetch("http://localhost:8000/stocks/losers");
-        if (!res.ok) throw new Error("Failed to fetch losers");
-
-        const data: any[] = await res.json();
-
-        const mapped: Stock[] = data.map((s) => ({
-          symbol: s.symbol,
-          name: s.name,
-          price: Number(s.price),
-          change: Number(s.change),
-          changePercent: Number(s.changesPercentage),
-          exchange: s.exchange,
-        }));
-
-        setStocks(mapped);
+        const data = await getLosers();
+        setStocks(data);
       } catch (err) {
         console.error("Error fetching losers:", err);
         setStocks([]);
@@ -52,7 +30,7 @@ export default function TopLosersPage() {
       }
     }
 
-    fetchLosers();
+    fetchLosersData();
   }, []);
 
   const handleRowClick = (symbol: string) => {

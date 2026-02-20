@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
 import { motion, easeOut } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { getGainers } from "@/lib/fetchStock";
 
 interface Stock {
   symbol: string;
@@ -25,25 +26,11 @@ export default function TopGainersPage() {
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchGainers() {
+    async function fetchGainersData() {
       try {
-        setLoading(true);
-
-        const res = await fetch("http://localhost:8000/stocks/gainers");
-        if (!res.ok) throw new Error("Failed to fetch gainers");
-
-        const data: any[] = await res.json();
-
-        const mapped: Stock[] = data.map((s) => ({
-          symbol: s.symbol,
-          name: s.name,
-          price: Number(s.price),
-          change: Number(s.change),
-          changePercent: Number(s.changesPercentage),
-          exchange: s.exchange,
-        }));
-
-        setStocks(mapped);
+      setLoading(true);
+      const data = await getGainers();
+      setStocks(data);
       } catch (err) {
         console.error("Error fetching gainers:", err);
         setStocks([]);
@@ -52,8 +39,8 @@ export default function TopGainersPage() {
       }
     }
 
-    fetchGainers();
-  }, []);
+    fetchGainersData();
+  }, [])
 
   const handleRowClick = (symbol: string) => {
     router.push(`/stocks/${symbol}`);

@@ -5,29 +5,11 @@ import { useAuth } from "@/lib/AuthProvider";
 import { motion, easeOut } from "framer-motion";
 import Link from "next/link";
 import { FiCheck, FiX } from "react-icons/fi";
-import { getGainers, getLosers, Stock } from "@/lib/fetchStock";
-
-interface NewsItem {
-  title: string;
-  site: string;
-  image: string | null;
-  url: string;
-  text?: string;
-}
-
-interface MarketIndex {
-  symbol: string;
-  name: string;
-  price: number;
-  change: number;
-  changePercent: number;
-}
+import { getGainers, getLosers, getNews, getSummary, Stock, NewsArticle, MarketSummary } from "@/lib/fetchStock";
 
 const containerVariants = {
   hidden: {},
-  show: { 
-    transition: { staggerChildren: 0.15 },
-  },
+  show: { transition: { staggerChildren: 0.15 } },
 };
 
 const cardVariants = {
@@ -41,8 +23,8 @@ export default function Home() {
 
   const [topGainers, setTopGainers] = useState<Stock[]>([]);
   const [topLosers, setTopLosers] = useState<Stock[]>([]);
-  const [topNews, setTopNews] = useState<NewsItem[]>([]);
-  const [marketSummary, setMarketSummary] = useState<MarketIndex[]>([]);
+  const [topNews, setTopNews] = useState<NewsArticle[]>([]);
+  const [marketSummary, setMarketSummary] = useState<MarketSummary[]>([]);
   const [loadingStocks, setLoadingStocks] = useState(true);
   const [loadingSummary, setLoadingSummary] = useState(true);
   const [loadingNews, setLoadingNews] = useState(true);
@@ -66,9 +48,8 @@ export default function Home() {
     async function fetchNews() {
       try {
         setLoadingNews(true);
-        const res = await fetch("http://localhost:8000/stocks/news");
-        const data: NewsItem[] = await res.json();
-        setTopNews(data.slice(0, 3));
+        const news = await getNews(3);
+        setTopNews(news);
       } catch (err) {
         console.error("Failed to fetch news", err);
         setTopNews([]);
@@ -80,9 +61,8 @@ export default function Home() {
     async function fetchSummary() {
       try {
         setLoadingSummary(true);
-        const res = await fetch("http://localhost:8000/stocks/summary-data");
-        const data: MarketIndex[] = await res.json();
-        setMarketSummary(data);
+        const summary = await getSummary();
+        setMarketSummary(summary);
       } catch (err) {
         console.error("Failed to fetch market summary", err);
         setMarketSummary([]);
@@ -100,7 +80,7 @@ export default function Home() {
     <ul className="space-y-4 text-xl">
       {stocks.map((stock) => (
         <li key={stock.symbol}>
-          {stock.symbol} ({stock.name}) ${stock.price.toFixed(2)}{" "}
+          <strong>{stock.symbol}</strong> ({stock.name}) ${stock.price.toFixed(2)}{" "}
           <span className={`text-xs ${stock.changePercent >= 0 ? "text-green-500" : "text-red-500"}`}>
             {stock.changePercent >= 0 ? "+" : ""}
             {stock.changePercent.toFixed(2)}%
@@ -110,7 +90,7 @@ export default function Home() {
     </ul>
   );
 
-  const renderMarketSummary = (summary: MarketIndex[]) => (
+  const renderMarketSummary = (summary: MarketSummary[]) => (
     <ul className="space-y-4 text-xl">
       {summary.map((idx) => (
         <li key={idx.symbol}>
@@ -125,7 +105,7 @@ export default function Home() {
 
   return (
     <motion.main
-      className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-(--color-bg) min-h-2 sm:max-w-5xl m-4 my-20 sm:m-24 sm:mx-auto"
+      className="grid grid-cols-1 sm:grid-cols-4 gap-2 bg-(--color-bg) min-h-2 sm:max-w-5xl m-4 my-20 sm:m-24 sm:mx-auto"
       initial="hidden"
       animate="show"
       variants={containerVariants}
@@ -147,9 +127,14 @@ export default function Home() {
           ) : (
             <ul className="space-y-4 text-xl">
               {topNews.map((news, idx) => (
-                <li key={idx}>
-                  <a href={news.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                    {news.title}
+                <li key={news.link + idx}>
+                  <a
+                    href={news.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    <strong>{news.title}</strong>
                   </a>{" "}
                   <span className="text-gray-500 text-xs block sm:inline sm:ml-2">{news.site}</span>
                 </li>
@@ -170,14 +155,16 @@ export default function Home() {
         </motion.div>
       </Link>
 
-      <Link href="/stocks/losers" className="sm:col-span-2 block border border-blue-500 rounded-xl shadow-md p-6 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg transition-shadow">
+      <Link href="/stocks/losers" className="block col-span-1 sm:col-span-2 border border-blue-500 rounded-xl shadow-md p-6 
+             bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg transition-shadow">
         <motion.div variants={cardVariants}>
           <h2 className="text-2xl font-bold mb-4 text-blue-500">Top Losers Today</h2>
           {loadingStocks ? <p>Loading...</p> : renderStockList(topLosers)}
         </motion.div>
       </Link>
 
-      <Link href="/stocks/gainers" className="sm:col-span-2 block min-h-56 border border-blue-500 rounded-xl shadow-md p-6 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg transition-shadow">
+      <Link href="/stocks/gainers" className="block col-span-1 sm:col-span-2 min-h-56 border border-blue-500 rounded-xl shadow-md p-6
+             bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-white hover:shadow-lg transition-shadow">
         <motion.div variants={cardVariants}>
           <h2 className="text-2xl font-bold mb-4 text-blue-500">Top Gainers Today</h2>
           {loadingStocks ? <p>Loading...</p> : renderStockList(topGainers)}

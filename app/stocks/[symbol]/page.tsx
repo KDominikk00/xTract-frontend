@@ -2,8 +2,10 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import CandlestickChart from "@/components/CandlestickChart";
+import MiniChart from "@/components/MiniChart";
 
 interface StockData {
   name: string;
@@ -50,15 +52,22 @@ export default function StockPage() {
         const data: StockData = await res.json();
         setStock(data);
 
-        const relatedSymbols = ["AAPL", "MSFT", "NVDA", "AMZN"].filter(s => s !== stockSymbol);
-        const relatedData: StockData[] = await Promise.all(
-          relatedSymbols.map(async (sym) => {
+        const allSymbols = ["AAPL", "JPM", "XOM", "KO", "JNJ", "TSLA", "BAC", "CVX", "PG", "PFE", "V", "MA", "DIS", "NFLX", "WMT", "MCD"];
+        const filteredSymbols = allSymbols.filter(s => s !== stockSymbol);
+
+        const shuffled = filteredSymbols.sort(() => 0.5 - Math.random());
+        const recommendedSymbols = shuffled.slice(0, 4);
+
+        const recommendedData: StockData[] = await Promise.all(
+          recommendedSymbols.map(async (sym) => {
             const r = await fetch(`/stocks/api/${sym}`);
-            if (!r.ok) throw new Error("Failed to fetch related stock");
+            if (!r.ok) throw new Error(`Failed to fetch stock ${sym}`);
             return r.json();
           })
         );
-        setRelatedStocks(relatedData);
+
+        setRelatedStocks(recommendedData);
+
       } catch (err) {
         console.error(err);
         setStock(null);
@@ -71,42 +80,48 @@ export default function StockPage() {
     fetchStock();
   }, [stockSymbol]);
 
-  if (loading) return <PageLayout className="max-w-7xl mx-auto px-6 py-16 text-white">
-    <p className="text-center text-gray-400">Loading {stockSymbol} data...</p>
-  </PageLayout>;
+  if (loading) return (
+    <PageLayout className="max-w-7xl mx-auto px-6 py-16 text-white">
+      <p className="text-center text-gray-400">Loading {stockSymbol} data...</p>
+    </PageLayout>
+  );
 
-  if (!stock) return <PageLayout className="max-w-7xl mx-auto px-6 py-16 text-white">
-    <p className="text-center text-red-500">Failed to load stock data.</p>
-  </PageLayout>;
+  if (!stock) return (
+    <PageLayout className="max-w-7xl mx-auto px-6 py-16 text-white">
+      <p className="text-center text-red-500">Failed to load stock data.</p>
+    </PageLayout>
+  );
 
   return (
-    <PageLayout className="max-w-7xl mx-auto px-6 py-16 text-white">
+    <PageLayout className="max-w-7xl mx-auto px-6 pt-16 text-white">
+    <div className="mb-8 sm:mb-16 text-left">
+      <div className="flex flex-row items-baseline justify-between gap-2 sm:gap-8 mb-14">
+        <div className="flex flex-row flex-wrap items-baseline gap-2 sm:gap-4 min-w-0">
+          <h1 className="text-2xl sm:text-4xl font-bold text-blue-500 truncate">
+            {stock.name} ({stock.symbol})
+          </h1>
 
-      <div className="mb-14 text-center md:text-left">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex flex-col md:flex-row md:items-baseline gap-4">
-            <h1 className="text-4xl font-bold text-blue-500">{stock.name} ({stock.symbol})</h1>
-            <div className="text-white text-2xl font-semibold flex flex-col md:flex-row md:items-baseline gap-2 mt-1 md:mt-0">
-              <span>${stock.currentPrice.toLocaleString()}</span>
-              <span className={`text-lg ${stock.change >= 0 ? "text-green-500" : "text-red-500"}`}>
-                {stock.change >= 0 ? "+" : ""}{stock.change.toFixed(2)} ({stock.changePercent >= 0 ? "+" : ""}{stock.changePercent.toFixed(2)}%)
-              </span>
-            </div>
+          <div className="flex flex-row flex-wrap items-baseline gap-1 sm:gap-2 text-white font-semibold min-w-0">
+            <span className="text-xl sm:text-2xl">${stock.currentPrice.toLocaleString()}</span>
+            <span className={`text-lg sm:text-xl ${stock.change >= 0 ? "text-green-500" : "text-red-500"}`}>
+              {stock.change >= 0 ? "+" : ""}{stock.change.toFixed(2)} ({stock.changePercent >= 0 ? "+" : ""}{stock.changePercent.toFixed(2)}%)
+            </span>
           </div>
-          <button
-            className={`pt-8 rounded-full text-2xl transition-colors duration-200 ${
-              followed ? "text-yellow-400 hover:text-yellow-300" : "text-gray-400 hover:text-yellow-400"
-            }`}
-            onClick={() => setFollowed(!followed)}
-          >
-            {followed ? "★" : "☆"}
-          </button>
         </div>
-      </div>
 
-      <div id="container" className="w-full h-96 rounded-xl shadow-md flex items-center justify-center mb-8">
-        {/* <p className="text-gray-500">Candlestick chart will go here</p> */}
-        <CandlestickChart></CandlestickChart>
+        <button
+          className={`rounded-full text-2xl sm:text-3xl transition-colors duration-200 whitespace-nowrap ${
+            followed ? "text-yellow-400 hover:text-yellow-300" : "text-gray-400 hover:text-yellow-400"
+          }`}
+          onClick={() => setFollowed(!followed)}
+        >
+          {followed ? "★" : "☆"}
+        </button>
+      </div>
+    </div>
+
+      <div id="container" className="w-full h-80 sm:h-96 rounded-xl shadow-md flex items-center justify-center sm:mb-8">
+        <CandlestickChart />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -118,19 +133,21 @@ export default function StockPage() {
           { label: "Volume", value: stock.volume.toLocaleString() },
           { label: "Market Cap", value: stock.marketCap?.toLocaleString() },
           { label: "Previous Close", value: stock.previousClose },
-        ].map(item =>
-          item.value != null && (
-            <div key={item.label} className="p-4 bg-[#0e111a] rounded-xl shadow-md text-center">
-              <p className="text-gray-400">{item.label}</p>
-              <p className="text-white font-bold">{item.value}</p>
-            </div>
-          )
-        )}
+        ].map(item => item.value != null && (
+          <div key={item.label} className="p-4 bg-[#0e111a] rounded-xl shadow-md text-center">
+            <p className="text-gray-400">{item.label}</p>
+            <p className="text-white font-bold">{item.value}</p>
+          </div>
+        ))}
         <div className="p-4 bg-[#0e111a] rounded-xl shadow-md text-center">
           <p className="text-gray-400">Change</p>
           <p className={`font-bold ${stock.change >= 0 ? "text-green-500" : "text-red-500"}`}>
             {stock.change >= 0 ? "+" : ""}{stock.change.toFixed(2)} ({stock.changePercent >= 0 ? "+" : ""}{stock.changePercent.toFixed(2)}%)
           </p>
+        </div>
+                <div className="p-4 bg-[#1a274d] rounded-xl shadow-md text-center">
+          <p className="text-gray-400">AI Suggestion</p>
+          <strong className="text-green-500">Strong buy</strong>
         </div>
       </div>
 
@@ -148,54 +165,55 @@ export default function StockPage() {
             { label: "Sector", value: stock.sector },
             { label: "Industry", value: stock.industry },
             { label: "Description", value: stock.description },
-          ].map(item =>
-            item.value != null && (
-              <div key={item.label} className="p-4 bg-[#0e111a] rounded-xl shadow-md">
-                <p className="text-gray-400 text-sm">{item.label}</p>
-                <p className="text-white text-sm font-semibold">{item.value}</p>
-              </div>
-            )
-          )}
+          ].map(item => item.value != null && (
+            <div key={item.label} className="p-4 bg-[#0e111a] rounded-xl shadow-md">
+              <p className="text-gray-400 text-sm">{item.label}</p>
+              <p className="text-white text-sm font-semibold">{item.value}</p>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-blue-500 mb-4">Latest News</h2>
-        <ul className="space-y-3">
-          <li className="p-4 bg-[#141c2f] rounded-xl shadow-md hover:shadow-lg transition-shadow">
-            <p className="text-white font-semibold">News item 1 about {stock.symbol}</p>
-            <p className="text-gray-400 text-sm mt-1">source: reuters.com</p>
-          </li>
-          <li className="p-4 bg-[#141c2f] rounded-xl shadow-md hover:shadow-lg transition-shadow">
-            <p className="text-white font-semibold">News item 2 about {stock.symbol}</p>
-            <p className="text-gray-400 text-sm mt-1">source: bloomberg.com</p>
-          </li>
-        </ul>
-      </div>
-
-      <div>
-        <h2 className="text-2xl font-bold text-blue-500 mb-4">Related Stocks</h2>
+      <div className="md:mb-10">
+        <h2 className="text-2xl font-bold text-blue-500 mb-4">Recommended Stocks</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {relatedStocks.map(rel => (
-            <div key={rel.symbol} className="p-4 bg-[#0e111a] rounded-xl shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex justify-between items-center mb-2">
-                <div>
-                  <p className="text-white font-semibold">{rel.name}</p>
+          {relatedStocks.map((rel) => (
+            <Link
+              key={rel.symbol}
+              href={`/stocks/${rel.symbol}`}
+              className="p-4 bg-[#0e111a] rounded-xl shadow-md hover:shadow-lg transition-shadow flex flex-col hover:bg-[#141c2f] cursor-pointer"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div className="min-h-12">
+                  <p className="text-white font-semibold wrap-break-word leading-snug">
+                    {rel.name}
+                  </p>
                   <p className="text-gray-400 text-sm">{rel.symbol}</p>
                 </div>
-                <div className={`font-bold ${rel.change >= 0 ? "text-green-500" : "text-red-500"}`}>
-                  {rel.close.toLocaleString()}
+                <div
+                  className={`font-bold ${
+                    rel.change >= 0 ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  ${rel.close.toLocaleString()}
                 </div>
               </div>
+
               <div className="text-right font-semibold mb-2">
-                <span className={rel.change >= 0 ? "text-green-500" : "text-red-500"}>
-                  {rel.change >= 0 ? "+" : ""}{rel.change} ({rel.changePercent >= 0 ? "+" : ""}{rel.changePercent}%)
+                <span
+                  className={rel.change >= 0 ? "text-green-500" : "text-red-500"}
+                >
+                  {rel.change >= 0 ? "+" : ""}
+                  {rel.change.toFixed(2)} (
+                  {rel.changePercent >= 0 ? "+" : ""}
+                  {rel.changePercent.toFixed(2)}%)
                 </span>
               </div>
-              <div className="w-full h-16 bg-[#141c2f] rounded-md flex items-center justify-center">
-                <p className="text-gray-500 text-xs">Mini chart</p>
+
+              <div className="w-full h-40 bg-[#141c2f] rounded-md flex items-center justify-center mt-auto">
+                <MiniChart symbol={rel.symbol} />
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

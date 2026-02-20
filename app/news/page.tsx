@@ -2,31 +2,18 @@
 
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/PageLayout";
-
-interface NewsArticle {
-  title: string;
-  content?: string;
-  image: string;
-  site: string;
-  link: string;
-  date: string;
-}
+import { getNews, NewsArticle } from "@/lib/fetchStock";
 
 export default function NewsPage() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchNews = async () => {
+    const fetchArticles = async () => {
       try {
-        const res = await fetch("http://localhost:8000/stocks/news");
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setArticles(data);
-        } else {
-          console.warn("API returned invalid news data:", data);
-          setArticles([]);
-        }
+        setLoading(true);
+        const data = await getNews(20); // fetch via helper
+        setArticles(data);
       } catch (err) {
         console.error("Failed to load news:", err);
         setArticles([]);
@@ -34,7 +21,8 @@ export default function NewsPage() {
         setLoading(false);
       }
     };
-    fetchNews();
+
+    fetchArticles();
   }, []);
 
   return (
@@ -49,10 +37,10 @@ export default function NewsPage() {
         <p className="text-center text-gray-400">No news available</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {articles.map((article) => (
+          {articles.map((article, idx) => (
             <a
-              key={article.link}
-              href={article.link}
+              key={article.link + idx}               // unique key
+              href={article.link}                     // ✅ correct property
               target="_blank"
               rel="noopener noreferrer"
               className="block bg-[#0e111a] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow"
@@ -65,11 +53,10 @@ export default function NewsPage() {
               <div className="p-5 space-y-2">
                 <h2 className="text-xl font-bold text-blue-400">{article.title}</h2>
                 <p className="text-gray-400 text-sm">
-                  {article.site} •{" "}
-                  {new Date(article.date).toLocaleDateString()}
+                  {article.site} • {new Date(article.publishedDate).toLocaleDateString()}
                 </p>
                 <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">
-                  {(article.content || "").replace(/<[^>]+>/g, "")}
+                  {(article.text || "").replace(/<[^>]+>/g, "")}
                 </p>
               </div>
             </a>

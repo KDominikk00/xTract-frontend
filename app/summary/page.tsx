@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import PageLayout from "@/components/PageLayout";
 
 export default function MarketPage() {
@@ -38,7 +38,7 @@ export default function MarketPage() {
         Market Summary
       </h1>
 
-      <div className="bg-[#0e111a] rounded-xl shadow-md p-4 h-[600px]">
+      <div className="bg-[#0e111a] rounded-xl shadow-md p-4 h-150">
         <div
           className="tradingview-widget-container w-full h-full"
           ref={container}
