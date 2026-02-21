@@ -1,11 +1,11 @@
-"use client";
-
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import PageLayout from "@/components/PageLayout";
-import { AuthProvider } from "@/lib/AuthProvider"
+import { AuthProvider } from "@/lib/AuthProvider";
+import AIAssistant from "@/components/AIAssistant";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,22 +17,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const metadata: Metadata = {
+  title: "xTract AI - Smarter Stock Insights",
+  description: "xTract - AI stock tracker and analytics platform",
+};
+
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
       <body
         className={`min-h-screen flex flex-col ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <PageLayout className="flex flex-col flex-1">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </PageLayout>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <AIAssistant />
         </AuthProvider>
       </body>
     </html>

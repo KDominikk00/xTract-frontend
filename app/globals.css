@@ -18,14 +18,3 @@ body {
   color: var(--color-fg);
   font-family: var(--font-sans), sans-serif;
 }
-
-.fade-in {
-  opacity: 0;
-  animation: fadeIn 0.8s ease-in forwards;
-}
-
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
-}

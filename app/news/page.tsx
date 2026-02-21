@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image, { type ImageLoaderProps } from "next/image";
 import PageLayout from "@/components/PageLayout";
 import { getNews, NewsArticle } from "@/lib/fetchStock";
+
+function imageLoader({ src }: ImageLoaderProps) {
+  return src;
+}
 
 export default function NewsPage() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
@@ -12,7 +17,7 @@ export default function NewsPage() {
     const fetchArticles = async () => {
       try {
         setLoading(true);
-        const data = await getNews(20); // fetch via helper
+        const data = await getNews(20);
         setArticles(data);
       } catch (err) {
         console.error("Failed to load news:", err);
@@ -26,8 +31,8 @@ export default function NewsPage() {
   }, []);
 
   return (
-    <PageLayout className="max-w-6xl mx-auto px-6 py-16 text-white">
-      <h1 className="text-4xl font-bold text-blue-500 mb-8 text-center md:text-left">
+    <PageLayout className="mx-auto max-w-6xl px-4 py-10 text-white sm:px-6 sm:py-14">
+      <h1 className="mb-6 text-center text-3xl font-bold text-blue-500 sm:mb-8 sm:text-4xl md:text-left">
         Trending News
       </h1>
 
@@ -39,16 +44,20 @@ export default function NewsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {articles.map((article, idx) => (
             <a
-              key={article.link + idx}               // unique key
-              href={article.link}                     // ✅ correct property
+              key={article.link + idx}
+              href={article.link}
               target="_blank"
               rel="noopener noreferrer"
               className="block bg-[#0e111a] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow"
             >
-              <img
-                src={article.image || "https://via.placeholder.com/400x200"}
+              <Image
+                loader={imageLoader}
+                src={article.image || "/globe.svg"}
                 alt={article.title}
-                className="w-full h-48 object-cover"
+                width={400}
+                height={200}
+                unoptimized
+                className="h-48 w-full object-cover"
               />
               <div className="p-5 space-y-2">
                 <h2 className="text-xl font-bold text-blue-400">{article.title}</h2>

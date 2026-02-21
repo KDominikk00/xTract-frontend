@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { createChart, LineSeries, ColorType } from "lightweight-charts";
 import type { UTCTimestamp, ISeriesApi } from "lightweight-charts";
 import { getHistory, Candle } from "@/lib/fetchStock";

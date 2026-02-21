@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.tasks import repeat_every
 import httpx
@@ -122,7 +122,7 @@ def get_stock_history(
         hist = ticker.history(period=yf_period, interval=interval)
 
         if hist.empty:
-            return {"error": f"No historical data found for {symbol}"}
+            raise HTTPException(status_code=404, detail=f"No historical data found for {symbol}")
 
         return [
             {
@@ -134,6 +134,8 @@ def get_stock_history(
             }
             for index, row in hist.iterrows()
         ]
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"⚠️ Error fetching history for {symbol}: {e}")
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=f"Failed to fetch history for {symbol}")

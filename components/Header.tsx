@@ -5,104 +5,159 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiSearch } from "react-icons/fi";
-import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthProvider";
+import { getUserTier } from "@/lib/aiPlan";
 
 export default function Header() {
   const router = useRouter();
   const { user } = useAuth();
+  const userTier = getUserTier(user);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
 
   const handleLogin = () => router.push("/login");
   const handleSignup = () => router.push("/signup");
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/logout");
-  };
+  const handleLogout = () => router.push("/logout");
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: React.SyntheticEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
-    console.log("Searching for:", query);
-    // TODO: Replace with actual stock API search logic
+    const symbol = query.trim().toUpperCase();
+    if (!symbol) return;
+    router.push(`/stocks/${symbol}`);
+    setQuery("");
     setSearchOpen(false);
   };
 
   return (
-    <header className="bg-(--color-bg) text-(--color-fg) border-b border-gray-800 px-6 py-4 flex justify-between items-center relative">
-      <Link href="/" className="text-4xl font-bold">
-        <span className="text-blue-500">x</span>Tract
-      </Link>
+    <header className="border-b border-gray-800 bg-(--color-bg) px-4 py-4 text-white sm:px-6">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="flex items-center justify-between gap-3 lg:gap-6">
+          <Link href="/" className="text-3xl font-bold sm:text-4xl">
+            <span className="text-blue-500">x</span>Tract
+          </Link>
 
-      <div className="flex items-center justify-center relative">
-        {!searchOpen && (
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="ml-16 rounded transition-colors mt-0.5"
-          >
-            <FiSearch className="text-blue-500 w-6 h-6" />
-          </button>
-        )}
-
-        <AnimatePresence>
-          {searchOpen && (
-            <motion.form
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 280, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              onSubmit={handleSearch}
-              className="ml-10 flex items-center bg-[#0e111a] border border-blue-500 rounded-full overflow-hidden absolute left-1/2 -translate-x-1/2 shadow-md"
-            >
-              <input
-                type="text"
-                placeholder="Search stocks..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                autoFocus
-                className="px-3 py-1.5 w-full bg-transparent text-white focus:outline-none text-sm"
-              />
+          <div className="hidden lg:flex lg:flex-1 lg:justify-center">
+            {!searchOpen && (
               <button
-                type="submit"
-                className="p-2 transition-colors"
+                onClick={() => setSearchOpen(true)}
+                className="rounded p-1 transition-colors hover:text-blue-400"
+                aria-label="Open stock search"
               >
-                <FiSearch className="hover:text-blue-500 w-5 h-5 text-white" />
+                <FiSearch className="h-6 w-6 text-blue-500" />
               </button>
-              <button
-                type="button"
-                onClick={() => setSearchOpen(false)}
-                className="px-3 text-gray-400 hover:text-red-400 transition-colors"
-              >
-                ✕
-              </button>
-            </motion.form>
-          )}
-        </AnimatePresence>
-      </div>
+            )}
 
-      <div className="flex space-x-4">
-        {!user ? (
-          <>
-            <button onClick={handleLogin} className="px-4 py-2 rounded transition">
-              <span className="hover:text-blue-500 cursor-pointer transition">Login</span>
-            </button>
+            <AnimatePresence>
+              {searchOpen && (
+                <motion.form
+                  key="search-form-desktop"
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 420, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  onSubmit={handleSearch}
+                  className="flex items-center overflow-hidden rounded-full border border-blue-500 bg-[#141c2f] shadow-md"
+                >
+                  <input
+                    type="text"
+                    placeholder="Enter symbol (NVDA, AAPL)"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    autoFocus
+                    className="w-full bg-transparent px-3 py-1.5 text-sm text-white focus:outline-none"
+                  />
+                  <button type="submit" className="p-2 transition-colors">
+                    <FiSearch className="h-5 w-5 text-white hover:text-blue-500" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchOpen(false)}
+                    className="px-3 text-gray-400 transition-colors hover:text-red-400"
+                  >
+                    ✕
+                  </button>
+                </motion.form>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-4">
+            {!user ? (
+              <>
+                <button
+                  onClick={handleLogin}
+                  className="cursor-pointer rounded px-4 py-2 text-sm transition hover:text-blue-500 sm:text-base"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={handleSignup}
+                  className="cursor-pointer rounded bg-blue-500 px-4 py-2 text-sm text-white transition hover:bg-blue-700 sm:text-base"
+                >
+                  Sign Up
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="rounded-full border border-blue-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-300">
+                  {userTier}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="cursor-pointer rounded bg-red-600 px-4 py-2 text-sm text-white transition hover:bg-red-700 sm:text-base"
+                >
+                  Log Out
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="relative mt-3 flex justify-center lg:hidden">
+          {!searchOpen && (
             <button
-              onClick={handleSignup}
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-700 rounded transition cursor-pointer"
+              onClick={() => setSearchOpen(true)}
+              className="rounded p-1 transition-colors hover:text-blue-400"
+              aria-label="Open stock search"
             >
-              Sign Up
+              <FiSearch className="h-6 w-6 text-blue-500" />
             </button>
-          </>
-        ) : (
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 hover:bg-red-700 text-white rounded transition-colors cursor-pointer shadow-sm"
-          >
-            Log Out
-          </button>
-        )}
+          )}
+
+          <AnimatePresence>
+            {searchOpen && (
+              <motion.form
+                key="search-form-mobile"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: "min(28rem, 92vw)", opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                onSubmit={handleSearch}
+                className="flex items-center overflow-hidden rounded-full border border-blue-500 bg-[#141c2f] shadow-md"
+              >
+                <input
+                  type="text"
+                  placeholder="Enter symbol (NVDA, AAPL)"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  autoFocus
+                  className="w-full bg-transparent px-3 py-1.5 text-sm text-white focus:outline-none"
+                />
+                <button type="submit" className="p-2 transition-colors">
+                  <FiSearch className="h-5 w-5 text-white hover:text-blue-500" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(false)}
+                  className="px-3 text-gray-400 transition-colors hover:text-red-400"
+                >
+                  ✕
+                </button>
+              </motion.form>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </header>
   );

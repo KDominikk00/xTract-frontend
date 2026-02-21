@@ -33,6 +33,21 @@ export type Candle = {
   close: number;
 };
 
+type ApiRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is ApiRecord {
+  return typeof value === "object" && value !== null;
+}
+
+function toNumber(value: unknown, fallback = 0): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function toString(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
 async function fetchStocks(endpoint: string, limit?: number): Promise<Stock[]> {
   const url = new URL(`http://localhost:8000/stocks/${endpoint}`);
   if (limit) url.searchParams.set("n", limit.toString());
@@ -40,16 +55,19 @@ async function fetchStocks(endpoint: string, limit?: number): Promise<Stock[]> {
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error(`Failed to fetch ${endpoint}`);
 
-  const data = await res.json();
+  const data: unknown = await res.json();
+  if (!Array.isArray(data)) return [];
 
-  return (data || []).map((stock: any) => ({
-    symbol: stock.symbol,
-    name: stock.name,
-    price: Number(stock.price),
-    change: Number(stock.change),
-    changePercent: Number(stock.changePercent ?? stock.changesPercentage ?? 0),
-    exchange: stock.exchange ?? "",
-  }));
+  return data
+    .filter(isRecord)
+    .map((stock) => ({
+      symbol: toString(stock.symbol),
+      name: toString(stock.name),
+      price: toNumber(stock.price),
+      change: toNumber(stock.change),
+      changePercent: toNumber(stock.changePercent ?? stock.changesPercentage),
+      exchange: toString(stock.exchange),
+    }));
 }
 
 export async function getGainers(limit?: number): Promise<Stock[]> {
@@ -67,15 +85,19 @@ export async function getNews(limit?: number): Promise<NewsArticle[]> {
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error("Failed to fetch news");
 
-  const data = await res.json();
-  return data.map((item: any) => ({
-    title: item.title,
-    link: item.link,
-    site: item.site ?? item.source ?? "",
-    publishedDate: item.publishedDate ?? item.date ?? "",
-    image: item.image ?? "",
-    text: item.text ?? item.description ?? "",
-  }));
+  const data: unknown = await res.json();
+  if (!Array.isArray(data)) return [];
+
+  return data
+    .filter(isRecord)
+    .map((item) => ({
+      title: toString(item.title),
+      link: toString(item.link),
+      site: toString(item.site ?? item.source),
+      publishedDate: toString(item.publishedDate ?? item.date),
+      image: toString(item.image),
+      text: toString(item.text ?? item.description),
+    }));
 }
 
 export async function getSummary(): Promise<MarketSummary[]> {
@@ -92,7 +114,24 @@ export async function getHistory(
   const res = await fetch(
     `http://localhost:8000/stocks/history/${symbol}?period=${period}&interval=${interval}`
   );
-  if (!res.ok) throw new Error(`Failed to fetch history for ${symbol}`);
-  return res.json();
-}
+  const data: unknown = await res.json();
 
+  if (!res.ok) {
+    if (isRecord(data) && typeof data.detail === "string") {
+      throw new Error(data.detail);
+    }
+    throw new Error(`Failed to fetch history for ${symbol}`);
+  }
+
+  if (!Array.isArray(data)) {
+    throw new Error(`Unexpected history response for ${symbol}`);
+  }
+
+  return data.filter(isRecord).map((row) => ({
+    time: toNumber(row.time),
+    open: toNumber(row.open),
+    high: toNumber(row.high),
+    low: toNumber(row.low),
+    close: toNumber(row.close),
+  }));
+}

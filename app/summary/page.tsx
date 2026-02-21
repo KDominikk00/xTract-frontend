@@ -1,10 +1,35 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import PageLayout from "@/components/PageLayout";
+import { useAuth } from "@/lib/AuthProvider";
+import { getUserTier } from "@/lib/aiPlan";
+import { getSummary, type MarketSummary } from "@/lib/fetchStock";
+import { supabase } from "@/lib/supabaseClient";
+import { getCachedMarketSummary, setCachedMarketSummary } from "@/lib/aiQuotaClient";
+
+type AIReportsResponse = {
+  middayReport?: string;
+  closingReport?: string;
+  generatedAt?: string;
+  error?: string;
+};
+
+async function getAccessToken() {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw new Error(error.message);
+  return data.session?.access_token ?? null;
+}
 
 export default function MarketPage() {
   const container = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const tier = useMemo(() => getUserTier(user), [user]);
+  const isPaid = tier === "plus" || tier === "pro";
+  const [summaryData, setSummaryData] = useState<MarketSummary[]>([]);
+  const [reportState, setReportState] = useState<"idle" | "loading" | "ready" | "forbidden" | "error">("idle");
+  const [middayReport, setMiddayReport] = useState("");
+  const [closingReport, setClosingReport] = useState("");
 
   useEffect(() => {
     if (!container.current) return;
@@ -32,13 +57,96 @@ export default function MarketPage() {
     container.current.appendChild(script);
   }, []);
 
+  useEffect(() => {
+    async function fetchMarketSummaryData() {
+      try {
+        const summary = await getSummary();
+        setSummaryData(summary);
+      } catch (err) {
+        console.error("Failed to fetch summary data for AI reports:", err);
+        setSummaryData([]);
+      }
+    }
+
+    void fetchMarketSummaryData();
+  }, []);
+
+  useEffect(() => {
+    if (!user || !isPaid) {
+      setReportState(user ? "forbidden" : "idle");
+      setMiddayReport("");
+      setClosingReport("");
+      return;
+    }
+    if (summaryData.length === 0) return;
+
+    async function fetchAIReports() {
+      try {
+        const summarySignature = JSON.stringify(
+          summaryData.map((item) => ({
+            symbol: item.symbol,
+            price: Number(item.price.toFixed(2)),
+            changePercent: Number(item.changePercent.toFixed(2)),
+          }))
+        );
+
+        const cached = getCachedMarketSummary(tier, summarySignature);
+        if (cached) {
+          setMiddayReport(cached.middayReport);
+          setClosingReport(cached.closingReport);
+          setReportState("ready");
+          return;
+        }
+
+        setReportState("loading");
+        const token = await getAccessToken();
+        if (!token) {
+          setReportState("forbidden");
+          return;
+        }
+
+        const res = await fetch("/api/ai/market-summary", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ summary: summaryData }),
+        });
+
+        const data = (await res.json()) as AIReportsResponse;
+        if (res.status === 403) {
+          setReportState("forbidden");
+          return;
+        }
+        if (!res.ok || !data.middayReport || !data.closingReport) {
+          throw new Error(data.error ?? "Failed to load AI reports");
+        }
+
+        setMiddayReport(data.middayReport);
+        setClosingReport(data.closingReport);
+        setCachedMarketSummary(tier, summarySignature, {
+          middayReport: data.middayReport,
+          closingReport: data.closingReport,
+          generatedAt: data.generatedAt ?? new Date().toISOString(),
+        });
+        setReportState("ready");
+      } catch (err) {
+        console.error("Failed to fetch AI market reports:", err);
+        setReportState("error");
+      }
+    }
+
+    void fetchAIReports();
+  }, [user, isPaid, summaryData, tier]);
+
   return (
-    <PageLayout className="max-w-5xl mx-auto px-6 py-16 text-white">
-      <h1 className="text-4xl font-bold text-blue-500 mb-8 text-center md:text-left">
+    <PageLayout className="mx-auto max-w-5xl px-4 py-10 text-white sm:px-6 sm:py-14">
+      <h1 className="mb-6 text-center text-3xl font-bold text-blue-500 sm:mb-8 sm:text-4xl md:text-left">
         Market Summary
       </h1>
 
-      <div className="bg-[#0e111a] rounded-xl shadow-md p-4 h-150">
+      <div className="h-[28rem] rounded-xl bg-[#0e111a] p-3 shadow-md sm:h-[34rem] sm:p-4 lg:h-[38rem]">
         <div
           className="tradingview-widget-container w-full h-full"
           ref={container}
@@ -51,7 +159,7 @@ export default function MarketPage() {
         Live market heatmap powered by TradingView.
       </p>
 
-      <section className="mt-12">
+      <section className="mt-10 sm:mt-12">
         <h2 className="text-2xl font-bold text-blue-500 mb-4">
           AI Market Insights
         </h2>
@@ -61,25 +169,38 @@ export default function MarketPage() {
             <h3 className="text-xl font-semibold text-blue-400 mb-2">
               Mid-Day Report
             </h3>
-            <p className="text-gray-300 text-sm leading-relaxed">
-              The market opened strong today with technology and energy sectors
-              leading the gains. S&P 500 is up 1.2%, while Nasdaq shows a
-              1.8% increase. Analysts note that investor sentiment is boosted
-              by positive earnings reports from key tech companies.
-            </p>
+            {reportState === "ready" ? (
+              <p className="text-gray-300 text-sm leading-relaxed">{middayReport}</p>
+            ) : reportState === "loading" ? (
+              <p className="text-gray-400 text-sm leading-relaxed">Generating AI report...</p>
+            ) : reportState === "forbidden" ? (
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Available on paid plans (Plus or Pro).
+              </p>
+            ) : reportState === "error" ? (
+              <p className="text-red-300 text-sm leading-relaxed">AI report is currently unavailable.</p>
+            ) : (
+              <p className="text-gray-400 text-sm leading-relaxed">Log in to load AI reports.</p>
+            )}
           </div>
 
           <div className="bg-[#0e111a] rounded-xl shadow-md p-6">
             <h3 className="text-xl font-semibold text-blue-400 mb-2">
               Closing Report
             </h3>
-            <p className="text-gray-300 text-sm leading-relaxed">
-              Markets closed mixed with S&P 500 up 0.5% and Nasdaq down 0.2%.
-              Technology stocks cooled off after mid-day gains, while energy
-              and industrials maintained strong performance. Overall trading
-              volume was moderate, reflecting cautious investor sentiment ahead
-              of tomorrow's economic reports.
-            </p>
+            {reportState === "ready" ? (
+              <p className="text-gray-300 text-sm leading-relaxed">{closingReport}</p>
+            ) : reportState === "loading" ? (
+              <p className="text-gray-400 text-sm leading-relaxed">Generating AI report...</p>
+            ) : reportState === "forbidden" ? (
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Available on paid plans (Plus or Pro).
+              </p>
+            ) : reportState === "error" ? (
+              <p className="text-red-300 text-sm leading-relaxed">AI report is currently unavailable.</p>
+            ) : (
+              <p className="text-gray-400 text-sm leading-relaxed">Log in to load AI reports.</p>
+            )}
           </div>
         </div>
       </section>

@@ -26,8 +26,8 @@ export default function LogoutPage() {
 
   return (
     <PageLayout>
-      <main className="flex items-center pt-56 justify-center px-6 bg-(--color-bg) text-white">
-        <div className="w-full max-w-md border border-blue-500 rounded-xl shadow-md p-8 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] text-center">
+      <section className="flex min-h-[60vh] items-center justify-center bg-(--color-bg) px-4 py-10 text-white sm:px-6 sm:py-14">
+        <div className="w-full max-w-md rounded-xl border border-blue-500 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] p-6 text-center shadow-md sm:p-8">
           <h2 className="text-3xl font-bold mb-6 text-blue-500">Logging Out</h2>
 
           {status === "loading" && <p className="text-white">Signing you out...</p>}
@@ -44,7 +44,7 @@ export default function LogoutPage() {
             </>
           )}
         </div>
-      </main>
+      </section>
     </PageLayout>
   );
 }

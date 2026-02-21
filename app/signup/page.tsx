@@ -40,8 +40,8 @@ export default function Signup() {
 
   return (
     <PageLayout>
-      <main className="flex items-center justify-center px-6 bg-(--color-bg) text-white min-h-[calc(100vh-12rem)] sm:min-h-screen">
-        <div className="w-full max-w-md border border-blue-500 rounded-xl shadow-md p-8 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] hover:shadow-lg transition-shadow">
+      <section className="flex min-h-[60vh] items-center justify-center bg-(--color-bg) px-4 py-10 text-white sm:px-6 sm:py-14">
+        <div className="w-full max-w-md rounded-xl border border-blue-500 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] p-6 shadow-md transition-shadow hover:shadow-lg sm:p-8">
           <h2 className="text-3xl font-bold mb-6 text-blue-500 text-center">
             Create Account
           </h2>
@@ -117,7 +117,7 @@ export default function Signup() {
             </Link>
           </p>
         </div>
-      </main>
+      </section>
     </PageLayout>
   );
 }
