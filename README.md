@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# xTract
 
-## Getting Started
+<p align="center">
+  <img src="./xtract/public/xtract-banner.svg" alt="xTract banner" width="100%" />
+</p>
 
-First, run the development server:
+xTract is an AI-powered stock intelligence platform built to help users move from raw market noise to faster, clearer decisions.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+It combines live market data, personalized watchlists, and AI-driven analysis into one focused interface.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Highlights
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Real-time market overview (gainers, losers, trending news, market heatmap)
+- Stock detail pages with charting, fundamentals, and AI buy/hold/sell suggestions
+- AI assistant chat that understands on-screen context and answers broader stock questions
+- Followed stocks workflow with watchlist previews and dedicated followed page
+- Tiered usage model (Free / Plus / Pro) with server-enforced AI quotas
+- Stripe billing integration for subscriptions and plan management
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Product Focus
 
-## Learn More
+xTract is designed to be:
 
-To learn more about Next.js, take a look at the following resources:
+- Fast to scan
+- Opinionated in presentation
+- Practical for everyday market tracking
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Next.js (App Router)
+- TypeScript + Tailwind CSS
+- Supabase (Auth + Postgres)
+- Stripe (billing and subscriptions)
+- Gemini API (AI features)
+- FastAPI stock service
 
-## Deploy on Vercel
+## Repository Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `xtract/` - main web app
+- `xtract/stock-api/` - stock data backend service
+- `xtract/supabase/sql/` - SQL migrations and DB setup scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Vision
+
+xTract aims to be a reliable stock copilot: strong at real-time context, clear explanations, and practical signals users can act on.
