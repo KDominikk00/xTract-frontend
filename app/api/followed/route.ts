@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     const tier = getUserTier(user);
-    const followLimit = tier === "pro" ? null : 3;
+    const followLimit = tier === "pro" ? null : tier === "plus" ? 10 : 3;
 
     if (followLimit !== null) {
       const { count, error: countError } = await supabaseAdmin
@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
         throw new Error(existingError.message);
       }
 
+      // Idempotent follows (already present) should not be blocked by plan limits.
       const alreadyFollowed = Boolean(existing?.symbol);
       if (!alreadyFollowed && (count ?? 0) >= followLimit) {
         return NextResponse.json(

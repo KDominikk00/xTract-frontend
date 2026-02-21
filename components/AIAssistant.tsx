@@ -33,6 +33,7 @@ function buildQuotaText(snapshot: AIQuotaSnapshot): string {
 function collectScreenContext() {
   const mainText = document.querySelector("main")?.textContent ?? "";
   const fallbackText = document.body?.textContent ?? "";
+  // Collapse whitespace and cap size so context remains useful without overloading the prompt.
   const text = (mainText || fallbackText).replace(/\s+/g, " ").trim().slice(0, 7000);
   return {
     pathname: window.location.pathname,
@@ -122,6 +123,7 @@ export default function AIAssistant() {
       }
 
       const context = collectScreenContext();
+      // Send only recent turns to control request size and keep responses snappy.
       const history = messages.slice(-8).map((message) => ({
         role: message.role,
         content: message.content,

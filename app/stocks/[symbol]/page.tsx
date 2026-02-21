@@ -152,6 +152,7 @@ export default function StockPage() {
         const data: StockData = await res.json();
         setStock(data);
 
+        // Lightweight fallback recommendation list until a personalized engine is added.
         const allSymbols = ["AAPL", "JPM", "XOM", "KO", "JNJ", "TSLA", "BAC", "CVX", "PG", "PFE", "V", "MA", "DIS", "NFLX", "WMT", "MCD"];
         const filteredSymbols = allSymbols.filter(s => s !== stockSymbol);
 
@@ -182,6 +183,7 @@ export default function StockPage() {
 
   useEffect(() => {
     if (!stock) return;
+    // Snapshot avoids stale symbol reads if route changes while async work is in flight.
     const currentStock = stock;
     if (!user) {
       setAiStatus("limited");
@@ -189,6 +191,7 @@ export default function StockPage() {
       return;
     }
 
+    // Suggestion cache key is scoped by tier+quota window to avoid stale cross-plan reuse.
     const cached = getCachedSuggestion(tier, currentStock.symbol);
     if (cached) {
       setAiSuggestion({

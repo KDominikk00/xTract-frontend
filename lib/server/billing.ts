@@ -99,6 +99,7 @@ function resolveTierFromSubscription(subscription: StripeSubscription): "free" |
   }
 
   const primaryPriceId = subscription.items.data[0]?.price?.id ?? null;
+  // Price ID is the primary source of truth; metadata fallback handles legacy/test sessions.
   const mapped = mapPriceToTier(primaryPriceId);
   if (mapped !== "free") return mapped;
 
@@ -126,6 +127,7 @@ async function recalculateAndSyncUserTier(userId: string, customerId: string) {
   const rows = (data ?? []) as SubscriptionRow[];
   let effectiveTier: "free" | "plus" | "pro" = "free";
 
+  // Keep the highest active tier in case overlapping subscriptions exist during plan changes.
   for (const row of rows) {
     if (row.status !== "active" && row.status !== "trialing") continue;
     effectiveTier = maxTier(effectiveTier, row.tier);

@@ -37,6 +37,7 @@ export default function CandlestickChart() {
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
+    // Create the chart instance once; later updates only mutate series data/options.
     const chart = createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth,
       height: chartContainerRef.current.clientHeight,
@@ -108,6 +109,7 @@ export default function CandlestickChart() {
         }));
 
         candleSeriesRef.current.setData(formatted);
+        // Keep both series in sync so toggling chart type is instant.
         lineSeriesRef.current.setData(
           formatted.map((d) => ({ time: d.time, value: d.close }))
         );

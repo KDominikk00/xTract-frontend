@@ -25,6 +25,7 @@ function ConfirmEmailContent() {
         const accessToken = searchParams.get("access_token");
         const refreshToken = searchParams.get("refresh_token");
 
+        // Supabase email templates can return either code flow or token_hash flow.
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) throw error;
@@ -38,6 +39,7 @@ function ConfirmEmailContent() {
           let sessionAccessToken = accessToken;
           let sessionRefreshToken = refreshToken;
 
+          // Some providers append tokens in the URL hash fragment instead of query params.
           if (!sessionAccessToken || !sessionRefreshToken) {
             const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
             sessionAccessToken = hashParams.get("access_token");

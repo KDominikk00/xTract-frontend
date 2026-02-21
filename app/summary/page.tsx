@@ -76,6 +76,7 @@ export default function MarketPage() {
 
     async function fetchAIReports() {
       try {
+        // Round values so tiny floating-point drift does not bust the client cache key.
         const summarySignature = JSON.stringify(
           summaryData.map((item) => ({
             symbol: item.symbol,
@@ -84,6 +85,7 @@ export default function MarketPage() {
           }))
         );
 
+        // Reuse the last report when source data is effectively unchanged.
         const cached = getCachedMarketSummary(tier, summarySignature);
         if (cached) {
           setMiddayReport(cached.middayReport);

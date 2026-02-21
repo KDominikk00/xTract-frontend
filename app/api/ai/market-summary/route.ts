@@ -48,6 +48,7 @@ function parseSummary(input: unknown): SummaryInput[] {
       };
     })
     .filter((row): row is SummaryInput => row !== null)
+    // Keep prompt size bounded and focused on top-level indices only.
     .slice(0, 10);
 }
 

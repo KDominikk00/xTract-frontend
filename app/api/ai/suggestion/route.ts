@@ -17,6 +17,7 @@ type ParsedSuggestion = {
 const VALID_LABELS: ParsedSuggestion["label"][] = ["Strong Buy", "Buy", "Hold", "Sell", "Strong Sell"];
 
 function parseSuggestion(text: string): ParsedSuggestion {
+  // Deterministic fallback keeps UI behavior stable when model output is malformed.
   const fallback: ParsedSuggestion = {
     label: "Hold",
     reason: "Not enough confidence from current metrics. This is informational, not financial advice.",
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
     });
 
     const parsed = parseSuggestion(response);
+    // Quota is consumed only for successfully generated responses.
     const quotaCheck = await consumeServerQuota(user.id, tier, "suggestion");
     if (!quotaCheck.allowed) {
       return NextResponse.json(

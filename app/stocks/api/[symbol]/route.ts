@@ -4,6 +4,7 @@ import YahooFinance from "yahoo-finance2";
 function parseUnixDate(timestamp?: number): string | null {
   if (!timestamp) return null;
   const d = new Date(timestamp * 1000);
+  // Guard against malformed epoch values returned by upstream providers.
   if (isNaN(d.getTime()) || d.getFullYear() > 3000) return null;
   return d.toLocaleDateString();
 }

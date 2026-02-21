@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
         break;
       case "invoice.paid":
       case "invoice.payment_succeeded":
+      // Stripe can emit either invoice.* or invoice_payment.* depending on API version/event settings.
       case "invoice_payment.paid":
         await handleInvoiceEvent(event.data.object as StripeInvoiceLike);
         break;

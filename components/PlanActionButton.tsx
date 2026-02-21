@@ -110,6 +110,7 @@ export default function PlanActionButton({ plan, currentTier, user }: PlanAction
   }
 
   if (currentTier === "pro" && plan === "plus") {
+    // Downgrades are handled in Stripe portal to keep proration/cycle rules consistent.
     return (
       <button
         onClick={openPortal}

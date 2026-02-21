@@ -9,6 +9,7 @@ function ensureScheme(value: string): string {
     return value;
   }
 
+  // Support host:port style env values from Render/local setups.
   return `http://${value}`;
 }
 

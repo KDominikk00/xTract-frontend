@@ -5,6 +5,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ symbol: string }> }
 ) {
+  // In App Router route handlers, dynamic params can arrive as a promise.
   const { symbol } = await params;
 
   try {

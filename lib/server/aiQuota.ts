@@ -23,6 +23,7 @@ export async function getServerQuotaSnapshot(userId: string, tier: AITier): Prom
     return createInitialQuotaSnapshot(tier);
   }
 
+  // Window keys are UTC-based so resets are deterministic for every client timezone.
   const windowKey = getQuotaWindowKey(tier);
   const { data, error } = await supabaseAdmin
     .from("ai_usage")
@@ -63,6 +64,7 @@ export async function consumeServerQuota(
   const policy = AI_TIER_POLICIES[tier];
   const windowKey = getQuotaWindowKey(tier);
 
+  // Quota changes go through one RPC so read+increment stays atomic under concurrency.
   const { data, error } = await supabaseAdmin.rpc("consume_ai_quota", {
     p_user_id: userId,
     p_window_key: windowKey,

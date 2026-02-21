@@ -51,6 +51,7 @@ function toString(value: unknown, fallback = ""): string {
 }
 
 function getAppBaseUrl(): string {
+  // Browser calls should follow the active origin; server calls need an absolute fallback URL.
   if (typeof window !== "undefined") {
     return window.location.origin.replace(/\/+$/, "");
   }

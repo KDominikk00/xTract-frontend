@@ -68,6 +68,7 @@ export default function Header() {
             <span className="text-blue-500">x</span>Tract
           </Link>
 
+          {/* Desktop keeps search inline with logo/auth; mobile gets its own row below. */}
           <div className="hidden lg:flex lg:flex-1 lg:justify-center">
             {!searchOpen && (
               <button

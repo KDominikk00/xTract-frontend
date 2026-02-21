@@ -52,6 +52,7 @@ def health():
 def fetch_market_summary():
     global cached_summary, cached_summary_last_update
 
+    # Summary data changes slowly relative to request volume, so we cache for one hour.
     if cached_summary and cached_summary_last_update and datetime.utcnow() - cached_summary_last_update < timedelta(hours=1):
         return cached_summary
 
@@ -150,6 +151,7 @@ async def refresh_summary():
 
 @app.get("/stocks/gainers")
 def get_gainers(n: int = None):
+    # Lazy-refresh lets the API recover after cold starts without waiting for the next scheduler tick.
     if not cached_gainers:
         refresh_stocks_once()
     return cached_gainers[:n] if n else cached_gainers

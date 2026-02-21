@@ -111,6 +111,7 @@ export async function createStripeCheckoutSession(input: {
   params.append("success_url", input.successUrl);
   params.append("cancel_url", input.cancelUrl);
   params.append("allow_promotion_codes", "true");
+  // Keep metadata on both objects because different webhook events expose different payload shapes.
   params.append("metadata[user_id]", input.userId);
   params.append("metadata[plan]", input.plan);
   params.append("subscription_data[metadata][user_id]", input.userId);
@@ -154,6 +155,7 @@ export function verifyStripeWebhookSignature(payload: string, signatureHeader: s
   if (!Number.isFinite(parsedTimestamp)) return false;
 
   const currentTimestamp = Math.floor(Date.now() / 1000);
+  // Reject stale signatures to reduce replay risk if a payload is leaked.
   if (Math.abs(currentTimestamp - parsedTimestamp) > WEBHOOK_TOLERANCE_SECONDS) return false;
 
   const signedPayload = `${timestamp}.${payload}`;
@@ -161,6 +163,7 @@ export function verifyStripeWebhookSignature(payload: string, signatureHeader: s
 
   return signatures.some((signature) => {
     try {
+      // Constant-time compare avoids timing side channels during signature checks.
       return timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
     } catch {
       return false;

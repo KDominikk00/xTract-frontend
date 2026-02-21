@@ -42,6 +42,7 @@ function writeJson<T>(key: string, value: T): void {
 }
 
 function buildSuggestionKey(tier: AITier, symbol: string, now = new Date()): string {
+  // Key includes plan+window so cache naturally expires when quota window or tier changes.
   return `${tier}:${getQuotaWindowKey(tier, now)}:${symbol.toUpperCase()}`;
 }
 
@@ -74,6 +75,7 @@ export function getCachedMarketSummary(
   if (!record) return null;
   if (record.signature !== signature) return null;
 
+  // Short TTL keeps summaries fresh while still reducing repeated AI calls.
   const cachedAtMs = Date.parse(record.cachedAt);
   if (!Number.isFinite(cachedAtMs)) return null;
   if (Date.now() - cachedAtMs > MARKET_SUMMARY_TTL_MS) return null;

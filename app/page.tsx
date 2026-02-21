@@ -120,6 +120,7 @@ export default function Home() {
           return;
         }
 
+        // Resolve fresh quote data for followed symbols so homepage cards stay live.
         const quotesRes = await fetch("/api/stocks/quotes", {
           method: "POST",
           headers: {
@@ -280,7 +281,7 @@ export default function Home() {
             <h3 className="text-xl font-bold text-blue-500 mb-2">Plus</h3>
             <p className="text-white text-3xl font-bold mb-4">$5<span className="text-gray-400 text-sm">/month</span></p>
             <ul className="space-y-2 text-white text-sm flex-1">
-              <li><FiCheck className="inline text-green-500"/> Follow up to 3 stocks</li>
+              <li><FiCheck className="inline text-green-500"/> Follow up to 10 stocks</li>
               <li><FiCheck className="inline text-green-500"/> 300 AI buy/sell suggestions / month</li>
               <li><FiCheck className="inline text-green-500"/> 1,000 AI chat questions / month</li>
               <li><FiCheck className="inline text-green-500"/> More AI Insights</li>

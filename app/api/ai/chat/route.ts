@@ -20,6 +20,7 @@ function parseHistory(input: unknown): AIChatTurn[] {
   if (!Array.isArray(input)) return [];
 
   return input
+    // Keep only the most recent turns to control token usage and request latency.
     .slice(-8)
     .map((item) => {
       if (typeof item !== "object" || item === null) return null;
@@ -67,6 +68,7 @@ export async function POST(req: NextRequest) {
       `Title: ${context.title ?? "unknown"}`,
       "",
       "Visible content snapshot:",
+      // Hard cap avoids very large DOM snapshots blowing up the model prompt.
       (context.screenText ?? "No context provided.").slice(0, 7000),
     ].join("\n");
 
@@ -83,6 +85,7 @@ export async function POST(req: NextRequest) {
       maxOutputTokens: 550,
     });
 
+    // Quota is consumed after a successful model response so transient model errors are not charged.
     const quotaCheck = await consumeServerQuota(user.id, tier, "chat");
     if (!quotaCheck.allowed) {
       return NextResponse.json(
