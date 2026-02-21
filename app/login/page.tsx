@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FaGoogle, FaFacebookF } from "react-icons/fa";
+import { FaGoogle } from "react-icons/fa";
 import PageLayout from "@/components/PageLayout";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -27,7 +27,7 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  const handleSocialLogin = async (provider: "google" | "facebook") => {
+  const handleSocialLogin = async (provider: "google") => {
     setLoading(true);
     setError(null);
 
@@ -94,14 +94,6 @@ export default function LoginPage() {
             >
               <FaGoogle className="w-5 h-5" />
               Continue with Google
-            </button>
-
-            <button
-              onClick={() => handleSocialLogin("facebook")}
-              className="w-full flex items-center justify-center gap-3 px-4 py-2 rounded-lg bg-[#1877f2] hover:bg-[#155db2] transition-colors text-white cursor-pointer"
-            >
-              <FaFacebookF className="w-5 h-5" />
-              Continue with Facebook
             </button>
           </div>
 

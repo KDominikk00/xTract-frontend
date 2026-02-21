@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
@@ -70,6 +70,7 @@ const suggestionTone: Record<AISuggestion["label"], string> = {
 
 export default function StockPage() {
   const params = useParams();
+  const router = useRouter();
   const symbolParam = Array.isArray(params.symbol) ? params.symbol[0] : params.symbol;
   const stockSymbol = symbolParam?.toUpperCase() || "TBD";
   const { user } = useAuth();
@@ -282,7 +283,11 @@ export default function StockPage() {
   );
 
   async function toggleFollowed() {
-    if (!user || followingBusy) return;
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    if (followingBusy) return;
 
     try {
       setFollowingBusy(true);

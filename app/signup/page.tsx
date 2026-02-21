@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FaGoogle, FaApple } from "react-icons/fa";
+import { FaGoogle } from "react-icons/fa";
 import PageLayout from "@/components/PageLayout";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -33,7 +33,7 @@ export default function Signup() {
     setLoading(false);
   };
 
-  const handleSocialLogin = async (provider: "google" | "apple") => {
+  const handleSocialLogin = async (provider: "google") => {
     const { error } = await supabase.auth.signInWithOAuth({ provider });
     if (error) setError(error.message);
   };
@@ -99,14 +99,6 @@ export default function Signup() {
             >
               <FaGoogle className="w-5 h-5" />
               Continue with Google
-            </button>
-
-            <button
-              onClick={() => handleSocialLogin("apple")}
-              className="w-full flex items-center justify-center gap-3 px-4 py-2 rounded-lg bg-black hover:bg-[#333333] transition-colors text-white cursor-pointer"
-            >
-              <FaApple className="w-5 h-5" />
-              Continue with Apple
             </button>
           </div>
 
