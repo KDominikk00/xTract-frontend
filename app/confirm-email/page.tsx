@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageLayout from "@/components/PageLayout";
 import { SiMinutemailer } from "react-icons/si";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function ConfirmEmail() {
+function ConfirmEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -104,5 +104,13 @@ export default function ConfirmEmail() {
         </div>
       </section>
     </PageLayout>
+  );
+}
+
+export default function ConfirmEmailPage() {
+  return (
+    <Suspense fallback={null}>
+      <ConfirmEmailContent />
+    </Suspense>
   );
 }
