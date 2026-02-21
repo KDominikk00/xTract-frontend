@@ -9,7 +9,7 @@ import {
   getUserTier,
   type AIQuotaSnapshot,
 } from "@/lib/aiPlan";
-import { supabase } from "@/lib/supabaseClient";
+import { getAccessToken } from "@/lib/getAccessToken";
 
 type ChatMessage = {
   role: "assistant" | "user";
@@ -39,14 +39,6 @@ function collectScreenContext() {
     title: document.title,
     screenText: text,
   };
-}
-
-async function getAccessToken() {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) {
-    throw new Error(error.message);
-  }
-  return data.session?.access_token ?? null;
 }
 
 export default function AIAssistant() {
@@ -185,17 +177,19 @@ export default function AIAssistant() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6">
       {!isOpen ? (
         <button
           onClick={handleOpen}
           aria-label="Open AI assistant"
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-br from-[#293559] to-[#041437] text-white shadow-lg transition-colors hover:bg-blue-600"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-br from-[#293559] to-[#041437] text-white shadow-lg transition-colors hover:bg-blue-600 sm:h-14 sm:w-14"
         >
-          <p className="h-6 w-6"><span className="text-blue-500">x</span>AI</p>
+          <span className="text-[11px] font-semibold leading-none sm:text-xs">
+            <span className="text-blue-500">x</span>AI
+          </span>
         </button>
       ) : (
-        <div className="w-[min(92vw,24rem)] rounded-xl border border-blue-500 bg-[#0e111a] text-white shadow-xl">
+        <div className="max-h-[calc(100dvh-6rem)] w-[min(96vw,24rem)] rounded-xl border border-blue-500 bg-[#0e111a] text-white shadow-xl sm:w-[min(92vw,24rem)]">
           <div className="flex items-center justify-between border-b border-[#1f2535] px-4 py-3">
             <div>
               <p className="font-semibold text-blue-400">xTract AI</p>
@@ -210,14 +204,14 @@ export default function AIAssistant() {
             </button>
           </div>
 
-          <div className="max-h-[22rem] space-y-3 overflow-y-auto px-4 py-3">
+          <div className="max-h-[min(22rem,55dvh)] space-y-3 overflow-y-auto px-4 py-3">
             {messages.map((message, idx) => (
               <div
                 key={`${message.role}-${idx}`}
-                className={`rounded-lg px-3 py-2 text-sm ${
+                className={`break-words rounded-lg px-3 py-2 text-sm ${
                   message.role === "user"
-                    ? "ml-10 bg-blue-600 text-white"
-                    : "mr-10 bg-[#141c2f] text-gray-100"
+                    ? "ml-8 bg-blue-600 text-white sm:ml-10"
+                    : "mr-8 bg-[#141c2f] text-gray-100 sm:mr-10"
                 }`}
               >
                 {message.content}

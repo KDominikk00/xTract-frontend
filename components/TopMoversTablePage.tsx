@@ -53,9 +53,9 @@ export default function TopMoversTablePage({
       {loading ? (
         <p>Loading...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-auto border-collapse">
-            <thead className="bg-[#141c2f] text-left text-gray-400">
+        <div className="overflow-x-auto rounded-xl border border-[#1a1f2a]">
+          <table className="min-w-[44rem] w-full table-auto border-collapse">
+            <thead className="bg-[#141c2f] text-left text-xs text-gray-400 sm:text-sm">
               <tr>
                 <th className="px-4 py-2">Symbol</th>
                 <th className="px-4 py-2">Name</th>
@@ -69,17 +69,17 @@ export default function TopMoversTablePage({
               {stocks.map((stock) => (
                 <motion.tr
                   key={stock.symbol}
-                  className="border-b border-[#1a1f2a] hover:bg-[#1f2535] cursor-pointer"
+                  className="cursor-pointer border-b border-[#1a1f2a] transition-colors hover:bg-[#1f2535]"
                   variants={rowVariants}
                   initial="hidden"
                   animate="show"
                   onClick={() => handleRowClick(stock.symbol)}
                 >
-                  <td className="px-4 py-3 text-blue-500 font-semibold">{stock.symbol}</td>
-                  <td className="max-w-[18rem] px-4 py-3">{stock.name}</td>
-                  <td className="px-4 py-3 font-semibold">${stock.price.toFixed(2)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 font-semibold text-blue-500">{stock.symbol}</td>
+                  <td className="max-w-[12rem] truncate px-4 py-3 sm:max-w-[18rem] md:max-w-none">{stock.name}</td>
+                  <td className="whitespace-nowrap px-4 py-3 font-semibold">${stock.price.toFixed(2)}</td>
                   <td
-                    className={`px-4 py-3 font-semibold ${
+                    className={`whitespace-nowrap px-4 py-3 font-semibold ${
                       stock.change >= 0 ? "text-green-500" : "text-red-500"
                     }`}
                   >
@@ -87,7 +87,7 @@ export default function TopMoversTablePage({
                     {stock.change.toFixed(2)}
                   </td>
                   <td
-                    className={`px-4 py-3 font-semibold ${
+                    className={`whitespace-nowrap px-4 py-3 font-semibold ${
                       stock.changePercent >= 0 ? "text-green-500" : "text-red-500"
                     }`}
                   >

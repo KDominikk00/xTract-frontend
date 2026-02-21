@@ -5,8 +5,8 @@ import PageLayout from "@/components/PageLayout";
 import { useAuth } from "@/lib/AuthProvider";
 import { getUserTier } from "@/lib/aiPlan";
 import { getSummary, type MarketSummary } from "@/lib/fetchStock";
-import { supabase } from "@/lib/supabaseClient";
 import { getCachedMarketSummary, setCachedMarketSummary } from "@/lib/aiQuotaClient";
+import { getAccessToken } from "@/lib/getAccessToken";
 
 type AIReportsResponse = {
   middayReport?: string;
@@ -14,12 +14,6 @@ type AIReportsResponse = {
   generatedAt?: string;
   error?: string;
 };
-
-async function getAccessToken() {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw new Error(error.message);
-  return data.session?.access_token ?? null;
-}
 
 export default function MarketPage() {
   const container = useRef<HTMLDivElement>(null);

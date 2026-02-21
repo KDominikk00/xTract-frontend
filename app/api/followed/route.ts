@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getUserTier } from "@/lib/aiPlan";
 import { getUserFromRequest } from "@/lib/server/auth";
 import { supabaseAdmin } from "@/lib/server/supabaseAdmin";
 
@@ -49,6 +50,39 @@ export async function POST(req: NextRequest) {
     const symbol = normalizeSymbol(body.symbol);
     if (!symbol) {
       return NextResponse.json({ error: "Invalid symbol" }, { status: 400 });
+    }
+
+    const tier = getUserTier(user);
+    const followLimit = tier === "pro" ? null : 3;
+
+    if (followLimit !== null) {
+      const { count, error: countError } = await supabaseAdmin
+        .from("followed_stocks")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if (countError) {
+        throw new Error(countError.message);
+      }
+
+      const { data: existing, error: existingError } = await supabaseAdmin
+        .from("followed_stocks")
+        .select("symbol")
+        .eq("user_id", user.id)
+        .eq("symbol", symbol)
+        .maybeSingle();
+
+      if (existingError) {
+        throw new Error(existingError.message);
+      }
+
+      const alreadyFollowed = Boolean(existing?.symbol);
+      if (!alreadyFollowed && (count ?? 0) >= followLimit) {
+        return NextResponse.json(
+          { error: "Follow limit reached for your current plan.", limit: followLimit },
+          { status: 403 }
+        );
+      }
     }
 
     const { error } = await supabaseAdmin.from("followed_stocks").upsert(

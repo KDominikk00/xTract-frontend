@@ -50,17 +50,6 @@ export async function POST(req: NextRequest) {
     }
 
     const tier = getUserTier(user);
-    const quotaCheck = await consumeServerQuota(user.id, tier, "suggestion");
-    if (!quotaCheck.allowed) {
-      return NextResponse.json(
-        {
-          error: "AI suggestion quota reached for your current plan.",
-          quota: quotaCheck.snapshot,
-          tier,
-        },
-        { status: 429 }
-      );
-    }
 
     const stockPayload = typeof body.stock === "object" && body.stock !== null ? body.stock : {};
     const symbol = body.symbol.toUpperCase().slice(0, 12);
@@ -82,6 +71,18 @@ export async function POST(req: NextRequest) {
     });
 
     const parsed = parseSuggestion(response);
+    const quotaCheck = await consumeServerQuota(user.id, tier, "suggestion");
+    if (!quotaCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: "AI suggestion quota reached for your current plan.",
+          quota: quotaCheck.snapshot,
+          tier,
+        },
+        { status: 429 }
+      );
+    }
+
     return NextResponse.json({
       label: parsed.label,
       reason: parsed.reason,

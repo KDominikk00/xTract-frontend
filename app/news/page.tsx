@@ -41,14 +41,14 @@ export default function NewsPage() {
       ) : articles.length === 0 ? (
         <p className="text-center text-gray-400">No news available</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {articles.map((article, idx) => (
             <a
               key={article.link + idx}
               href={article.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="block bg-[#0e111a] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow"
+              className="flex h-full flex-col overflow-hidden rounded-xl bg-[#0e111a] shadow-md transition-shadow hover:shadow-lg"
             >
               <Image
                 loader={imageLoader}
@@ -57,14 +57,14 @@ export default function NewsPage() {
                 width={400}
                 height={200}
                 unoptimized
-                className="h-48 w-full object-cover"
+                className="h-44 w-full object-cover sm:h-48"
               />
-              <div className="p-5 space-y-2">
-                <h2 className="text-xl font-bold text-blue-400">{article.title}</h2>
+              <div className="flex flex-1 flex-col space-y-2 p-5">
+                <h2 className="line-clamp-2 text-lg font-bold text-blue-400 sm:text-xl">{article.title}</h2>
                 <p className="text-gray-400 text-sm">
                   {article.site} • {new Date(article.publishedDate).toLocaleDateString()}
                 </p>
-                <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">
+                <p className="line-clamp-4 text-sm leading-relaxed text-gray-300">
                   {(article.text || "").replace(/<[^>]+>/g, "")}
                 </p>
               </div>

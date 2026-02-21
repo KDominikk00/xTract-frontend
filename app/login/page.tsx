@@ -27,7 +27,7 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  const handleSocialLogin = async (provider: "google" | "facebook" | "apple") => {
+  const handleSocialLogin = async (provider: "google" | "facebook") => {
     setLoading(true);
     setError(null);
 

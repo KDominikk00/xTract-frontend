@@ -4,19 +4,13 @@ import Link from "next/link";
 import { useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import type { AITier } from "@/lib/aiPlan";
-import { supabase } from "@/lib/supabaseClient";
+import { getAccessToken } from "@/lib/getAccessToken";
 
 type PlanActionButtonProps = {
   plan: "free" | "plus" | "pro";
   currentTier: AITier;
   user: User | null;
 };
-
-async function getAccessToken() {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw new Error(error.message);
-  return data.session?.access_token ?? null;
-}
 
 export default function PlanActionButton({ plan, currentTier, user }: PlanActionButtonProps) {
   const [loading, setLoading] = useState(false);
@@ -81,6 +75,17 @@ export default function PlanActionButton({ plan, currentTier, user }: PlanAction
   }
 
   if (plan === "free") {
+    if (currentTier === "free") {
+      return (
+        <button
+          className="mt-6 w-full cursor-not-allowed rounded-lg bg-zinc-700 py-2 font-semibold text-zinc-300"
+          disabled
+        >
+          Free Plan
+        </button>
+      );
+    }
+
     return (
       <button
         onClick={openPortal}

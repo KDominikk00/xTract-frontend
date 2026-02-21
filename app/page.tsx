@@ -8,7 +8,7 @@ import { FiCheck, FiX } from "react-icons/fi";
 import { getGainers, getLosers, getNews, getSummary, Stock, NewsArticle, MarketSummary } from "@/lib/fetchStock";
 import { getUserTier } from "@/lib/aiPlan";
 import PlanActionButton from "@/components/PlanActionButton";
-import { supabase } from "@/lib/supabaseClient";
+import { getAccessToken } from "@/lib/getAccessToken";
 
 const containerVariants = {
   hidden: {},
@@ -26,12 +26,6 @@ type FollowedPreviewStock = {
   currentPrice: number;
   changePercent: number;
 };
-
-async function getAccessToken() {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw new Error(error.message);
-  return data.session?.access_token ?? null;
-}
 
 export default function Home() {
   const { user } = useAuth();
@@ -121,34 +115,28 @@ export default function Home() {
         }
 
         const symbols = followedData.followed.slice(0, 5).map((item) => item.symbol);
-        const stocks = await Promise.all(
-          symbols.map(async (symbol) => {
-            const res = await fetch(`/stocks/api/${symbol}`);
-            if (!res.ok) return null;
-            const data = (await res.json()) as {
-              symbol?: string;
-              name?: string;
-              currentPrice?: number;
-              changePercent?: number;
-            };
-            if (
-              typeof data.symbol !== "string" ||
-              typeof data.name !== "string" ||
-              typeof data.currentPrice !== "number" ||
-              typeof data.changePercent !== "number"
-            ) {
-              return null;
-            }
-            return {
-              symbol: data.symbol,
-              name: data.name,
-              currentPrice: data.currentPrice,
-              changePercent: data.changePercent,
-            } as FollowedPreviewStock;
-          })
-        );
+        if (symbols.length === 0) {
+          setFollowedPreview([]);
+          return;
+        }
 
-        setFollowedPreview(stocks.filter((stock): stock is FollowedPreviewStock => stock !== null));
+        const quotesRes = await fetch("/api/stocks/quotes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ symbols }),
+        });
+        const quotesData = (await quotesRes.json()) as {
+          quotes?: FollowedPreviewStock[];
+        };
+
+        if (!quotesRes.ok || !Array.isArray(quotesData.quotes)) {
+          setFollowedPreview([]);
+          return;
+        }
+
+        setFollowedPreview(quotesData.quotes);
       } catch (err) {
         console.error("Failed to fetch followed preview:", err);
         setFollowedPreview([]);
@@ -161,9 +149,9 @@ export default function Home() {
   }, [user]);
 
   const renderStockList = (stocks: Stock[]) => (
-    <ul className="space-y-3 text-base sm:text-lg">
+    <ul className="space-y-3 text-sm sm:text-base lg:text-lg">
       {stocks.map((stock) => (
-        <li key={stock.symbol}>
+        <li key={stock.symbol} className="wrap-break-word">
           <strong>{stock.symbol}</strong> ({stock.name}) ${stock.price.toFixed(2)}{" "}
           <span className={`text-xs ${stock.changePercent >= 0 ? "text-green-500" : "text-red-500"}`}>
             {stock.changePercent >= 0 ? "+" : ""}
@@ -175,9 +163,9 @@ export default function Home() {
   );
 
   const renderMarketSummary = (summary: MarketSummary[]) => (
-    <ul className="space-y-3 text-base sm:text-lg">
+    <ul className="space-y-3 text-sm sm:text-base lg:text-lg">
       {summary.map((idx) => (
-        <li key={idx.symbol}>
+        <li key={idx.symbol} className="wrap-break-word">
           <strong>{idx.name}</strong>: ${idx.price.toFixed(2)}{" "}
           <span className={idx.change >= 0 ? "text-green-500 text-xs" : "text-red-500 text-xs"}>
             ({idx.change >= 0 ? "+" : ""}{idx.changePercent.toFixed(2)}%)
@@ -189,12 +177,12 @@ export default function Home() {
 
   return (
     <motion.section
-      className="mx-auto my-8 grid max-w-6xl grid-cols-1 gap-4 bg-(--color-bg) px-4 pb-8 sm:my-12 sm:grid-cols-4 sm:px-6"
+      className="mx-auto my-8 grid max-w-6xl grid-cols-1 gap-4 bg-(--color-bg) px-4 pb-8 sm:my-12 sm:px-6 md:grid-cols-4"
       initial="hidden"
       animate="show"
       variants={containerVariants}
     >
-      <Link href="/followed" className="sm:col-span-4 min-h-40 rounded-xl border border-blue-500 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] p-5 text-white shadow-md transition-shadow hover:shadow-lg sm:min-h-48 sm:p-6">
+      <Link href="/followed" className="min-h-40 rounded-xl border border-blue-500 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] p-5 text-white shadow-md transition-shadow hover:shadow-lg sm:min-h-48 sm:p-6 md:col-span-4">
         <motion.div variants={cardVariants}>
           <h2 className="mb-3 text-xl font-bold text-blue-500 sm:text-2xl">Followed Stocks</h2>
           {!user ? (
@@ -206,7 +194,7 @@ export default function Home() {
           ) : (
             <ul className="space-y-2 text-sm sm:text-base">
               {followedPreview.map((stock) => (
-                <li key={stock.symbol}>
+                <li key={stock.symbol} className="wrap-break-word">
                   <strong>{stock.symbol}</strong> ({stock.name}) ${stock.currentPrice.toFixed(2)}{" "}
                   <span className={stock.changePercent >= 0 ? "text-green-400" : "text-red-400"}>
                     {stock.changePercent >= 0 ? "+" : ""}
@@ -219,7 +207,7 @@ export default function Home() {
         </motion.div>
       </Link>
 
-      <Link href="/news" className="block min-h-52 cursor-pointer rounded-xl border border-blue-500 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] p-5 text-white shadow-md transition-shadow hover:shadow-lg sm:col-span-3 sm:min-h-56 sm:p-6">
+      <Link href="/news" className="block min-h-52 cursor-pointer rounded-xl border border-blue-500 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] p-5 text-white shadow-md transition-shadow hover:shadow-lg sm:min-h-56 sm:p-6 md:col-span-3">
         <motion.div variants={cardVariants}>
           <h2 className="mb-4 text-xl font-bold text-blue-500 sm:text-2xl">Trending News</h2>
           {loadingNews ? (
@@ -250,21 +238,21 @@ export default function Home() {
         </motion.div>
       </Link>
 
-      <Link href="/stocks/losers" className="col-span-1 block rounded-xl border border-blue-500 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] p-5 text-white shadow-md transition-shadow hover:shadow-lg sm:col-span-2 sm:p-6">
+      <Link href="/stocks/losers" className="col-span-1 block min-h-52 rounded-xl border border-blue-500 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] p-5 text-white shadow-md transition-shadow hover:shadow-lg sm:min-h-56 sm:p-6 md:col-span-2">
         <motion.div variants={cardVariants}>
           <h2 className="mb-4 text-xl font-bold text-blue-500 sm:text-2xl">Top Losers Today</h2>
           {loadingStocks ? <p>Loading...</p> : renderStockList(topLosers)}
         </motion.div>
       </Link>
 
-      <Link href="/stocks/gainers" className="col-span-1 block min-h-52 rounded-xl border border-blue-500 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] p-5 text-white shadow-md transition-shadow hover:shadow-lg sm:col-span-2 sm:min-h-56 sm:p-6">
+      <Link href="/stocks/gainers" className="col-span-1 block min-h-52 rounded-xl border border-blue-500 bg-linear-to-br from-[#0e111a] to-[#1a1f2a] p-5 text-white shadow-md transition-shadow hover:shadow-lg sm:min-h-56 sm:p-6 md:col-span-2">
         <motion.div variants={cardVariants}>
           <h2 className="mb-4 text-xl font-bold text-blue-500 sm:text-2xl">Top Gainers Today</h2>
           {loadingStocks ? <p>Loading...</p> : renderStockList(topGainers)}
         </motion.div>
       </Link>
 
-      <div className="mt-8 px-0 sm:col-span-4 sm:mt-12">
+      <div className="mt-8 px-0 sm:mt-12 md:col-span-4">
         <h2 className="mb-8 text-center text-2xl font-bold text-white sm:mb-10 sm:text-3xl">
           Choose Your Plan
         </h2>

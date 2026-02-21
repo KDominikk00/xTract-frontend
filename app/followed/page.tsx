@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import { useAuth } from "@/lib/AuthProvider";
-import { supabase } from "@/lib/supabaseClient";
+import { getAccessToken } from "@/lib/getAccessToken";
 
 type FollowedSymbolRow = {
   symbol: string;
@@ -16,12 +16,6 @@ type FollowedStock = {
   currentPrice: number;
   changePercent: number;
 };
-
-async function getAccessToken() {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw new Error(error.message);
-  return data.session?.access_token ?? null;
-}
 
 export default function Followed() {
   const { user } = useAuth();
@@ -54,35 +48,26 @@ export default function Followed() {
         return;
       }
 
-      const loaded = await Promise.all(
-        followedData.followed.map(async (item) => {
-          const res = await fetch(`/stocks/api/${item.symbol}`);
-          if (!res.ok) return null;
-          const data = (await res.json()) as {
-            symbol?: string;
-            name?: string;
-            currentPrice?: number;
-            changePercent?: number;
-          };
-          if (
-            typeof data.symbol !== "string" ||
-            typeof data.name !== "string" ||
-            typeof data.currentPrice !== "number" ||
-            typeof data.changePercent !== "number"
-          ) {
-            return null;
-          }
+      const symbols = followedData.followed.map((item) => item.symbol);
+      if (symbols.length === 0) {
+        setStocks([]);
+        return;
+      }
 
-          return {
-            symbol: data.symbol,
-            name: data.name,
-            currentPrice: data.currentPrice,
-            changePercent: data.changePercent,
-          } as FollowedStock;
-        })
-      );
+      const quotesRes = await fetch("/api/stocks/quotes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ symbols }),
+      });
+      const quotesData = (await quotesRes.json()) as { quotes?: FollowedStock[] };
+      if (!quotesRes.ok || !Array.isArray(quotesData.quotes)) {
+        setStocks([]);
+        return;
+      }
 
-      setStocks(loaded.filter((stock): stock is FollowedStock => stock !== null));
+      setStocks(quotesData.quotes);
     } catch (err) {
       console.error("Failed to load followed stocks:", err);
       setStocks([]);
@@ -136,9 +121,9 @@ export default function Followed() {
               key={stock.symbol}
               className="rounded-xl border border-blue-500 bg-[#0e111a] p-4 shadow-md"
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <Link href={`/stocks/${stock.symbol}`} className="min-w-0">
-                  <p className="text-lg font-semibold text-white">{stock.name}</p>
+                  <p className="break-words text-lg font-semibold text-white">{stock.name}</p>
                   <p className="text-sm text-gray-400">{stock.symbol}</p>
                   <p className="mt-2 text-sm text-white">${stock.currentPrice.toFixed(2)}</p>
                   <p className={stock.changePercent >= 0 ? "text-sm text-green-400" : "text-sm text-red-400"}>
@@ -148,7 +133,7 @@ export default function Followed() {
                 </Link>
                 <button
                   onClick={() => unfollow(stock.symbol)}
-                  className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-700"
+                  className="self-start rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-700 sm:self-auto"
                 >
                   Unfollow
                 </button>

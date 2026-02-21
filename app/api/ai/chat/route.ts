@@ -61,17 +61,6 @@ export async function POST(req: NextRequest) {
     const history = parseHistory(body.history);
     const context = parseContext(body.context);
     const tier = getUserTier(user);
-    const quotaCheck = await consumeServerQuota(user.id, tier, "chat");
-    if (!quotaCheck.allowed) {
-      return NextResponse.json(
-        {
-          error: "AI chat quota reached for your current plan.",
-          quota: quotaCheck.snapshot,
-          tier,
-        },
-        { status: 429 }
-      );
-    }
 
     const contextBlock = [
       `Path: ${context.pathname ?? "unknown"}`,
@@ -93,6 +82,18 @@ export async function POST(req: NextRequest) {
       temperature: 0.25,
       maxOutputTokens: 550,
     });
+
+    const quotaCheck = await consumeServerQuota(user.id, tier, "chat");
+    if (!quotaCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: "AI chat quota reached for your current plan.",
+          quota: quotaCheck.snapshot,
+          tier,
+        },
+        { status: 429 }
+      );
+    }
 
     return NextResponse.json({ reply, quota: quotaCheck.snapshot, tier });
   } catch (err) {

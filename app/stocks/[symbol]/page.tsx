@@ -16,7 +16,7 @@ import {
   getCachedSuggestion,
   setCachedSuggestion,
 } from "@/lib/aiQuotaClient";
-import { supabase } from "@/lib/supabaseClient";
+import { getAccessToken } from "@/lib/getAccessToken";
 
 interface StockData {
   name: string;
@@ -68,12 +68,6 @@ const suggestionTone: Record<AISuggestion["label"], string> = {
   "Strong Sell": "text-red-400",
 };
 
-async function getAccessToken(): Promise<string | null> {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw new Error(error.message);
-  return data.session?.access_token ?? null;
-}
-
 export default function StockPage() {
   const params = useParams();
   const symbolParam = Array.isArray(params.symbol) ? params.symbol[0] : params.symbol;
@@ -100,8 +94,7 @@ export default function StockPage() {
 
     async function fetchQuota() {
       try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData.session?.access_token;
+        const accessToken = await getAccessToken();
         if (!accessToken) return;
 
         const res = await fetch("/api/ai/quota", {
@@ -209,8 +202,7 @@ export default function StockPage() {
     async function fetchSuggestion() {
       setAiStatus("loading");
       try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData.session?.access_token;
+        const accessToken = await getAccessToken();
         if (!accessToken) {
           setAiStatus("limited");
           return;
@@ -322,35 +314,37 @@ export default function StockPage() {
 
   return (
     <PageLayout className="mx-auto max-w-7xl px-4 pt-8 pb-12 text-white sm:px-6 sm:pt-12">
-    <div className="mb-8 text-left sm:mb-12">
-      <div className="mb-8 flex flex-row items-start justify-between gap-3 sm:mb-10 sm:items-baseline sm:gap-8">
-        <div className="flex flex-row flex-wrap items-baseline gap-2 sm:gap-4 min-w-0">
-          <h1 className="text-2xl sm:text-4xl font-bold text-blue-500 break-words">
+      <div className="mb-8 text-left sm:mb-12">
+        <div className="mb-6 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+          <div className="min-w-0 space-y-2">
+            <h1 className="wrap-break-word text-2xl font-bold text-blue-500 sm:text-4xl">
             {stock.name} ({stock.symbol})
-          </h1>
+            </h1>
 
-          <div className="flex flex-row flex-wrap items-baseline gap-1 sm:gap-2 text-white font-semibold min-w-0">
-            <span className="text-xl sm:text-2xl">${stock.currentPrice.toLocaleString()}</span>
-            <span className={`text-lg sm:text-xl ${stock.change >= 0 ? "text-green-500" : "text-red-500"}`}>
-              {stock.change >= 0 ? "+" : ""}{stock.change.toFixed(2)} ({stock.changePercent >= 0 ? "+" : ""}{stock.changePercent.toFixed(2)}%)
-            </span>
+            <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold text-white">
+              <span className="text-xl sm:text-2xl">${stock.currentPrice.toLocaleString()}</span>
+              <span className={`text-lg sm:text-xl ${stock.change >= 0 ? "text-green-500" : "text-red-500"}`}>
+                {stock.change >= 0 ? "+" : ""}
+                {stock.change.toFixed(2)} ({stock.changePercent >= 0 ? "+" : ""}
+                {stock.changePercent.toFixed(2)}%)
+              </span>
+            </div>
           </div>
+
+          <button
+            className={`shrink-0 self-start whitespace-nowrap rounded-full text-2xl transition-colors duration-200 sm:self-auto sm:text-3xl ${
+              followed ? "text-yellow-400 hover:text-yellow-300" : "text-gray-400 hover:text-yellow-400"
+            }`}
+            onClick={toggleFollowed}
+            disabled={!user || followingBusy}
+            aria-label={followed ? "Unfollow stock" : "Follow stock"}
+          >
+            {followed ? "★" : "☆"}
+          </button>
         </div>
-
-        <button
-          className={`rounded-full text-2xl sm:text-3xl transition-colors duration-200 whitespace-nowrap ${
-            followed ? "text-yellow-400 hover:text-yellow-300" : "text-gray-400 hover:text-yellow-400"
-          }`}
-          onClick={toggleFollowed}
-          disabled={!user || followingBusy}
-          aria-label={followed ? "Unfollow stock" : "Follow stock"}
-        >
-          {followed ? "★" : "☆"}
-        </button>
       </div>
-    </div>
 
-      <div id="container" className="mb-6 flex h-80 w-full items-center justify-center rounded-xl shadow-md sm:mb-8 sm:h-96">
+      <div id="container" className="mb-6 h-80 w-full rounded-xl shadow-md sm:mb-8 sm:h-120 lg:h-136">
         <CandlestickChart />
       </div>
 
@@ -364,19 +358,19 @@ export default function StockPage() {
           { label: "Market Cap", value: stock.marketCap?.toLocaleString() },
           { label: "Previous Close", value: stock.previousClose },
         ].map(item => item.value != null && (
-          <div key={item.label} className="rounded-xl bg-[#0e111a] p-4 text-center shadow-md">
-            <p className="text-gray-400">{item.label}</p>
-            <p className="text-white font-bold">{item.value}</p>
+          <div key={item.label} className="flex h-full min-h-36 flex-col items-center justify-center rounded-xl bg-[#0e111a] p-4 text-center shadow-md">
+            <p className="text-sm text-gray-400">{item.label}</p>
+            <p className="mt-1 wrap-break-word text-sm font-bold text-white sm:text-base">{item.value}</p>
           </div>
         ))}
-        <div className="rounded-xl bg-[#0e111a] p-4 text-center shadow-md">
-          <p className="text-gray-400">Change</p>
-          <p className={`font-bold ${stock.change >= 0 ? "text-green-500" : "text-red-500"}`}>
+        <div className="flex h-full min-h-39 flex-col items-center justify-center rounded-xl bg-[#0e111a] p-4 text-center shadow-md">
+          <p className="text-sm text-gray-400">Change</p>
+          <p className={`mt-1 wrap-break-word text-sm font-bold sm:text-base ${stock.change >= 0 ? "text-green-500" : "text-red-500"}`}>
             {stock.change >= 0 ? "+" : ""}{stock.change.toFixed(2)} ({stock.changePercent >= 0 ? "+" : ""}{stock.changePercent.toFixed(2)}%)
           </p>
         </div>
-        <div className="rounded-xl bg-[#1a274d] p-4 text-center shadow-md">
-          <p className="text-gray-400">AI Suggestion</p>
+        <div className="flex h-full min-h-39 flex-col items-center justify-center rounded-xl bg-[#1a274d] p-4 text-center shadow-md">
+          <p className="text-sm text-gray-400">AI Suggestion</p>
           {aiStatus === "loading" ? (
             <strong className="text-blue-300">Analyzing...</strong>
           ) : aiStatus === "limited" ? (
@@ -427,15 +421,20 @@ export default function StockPage() {
             { label: "Industry", value: stock.industry },
             { label: "Description", value: stock.description },
           ].map(item => item.value != null && (
-            <div key={item.label} className="p-4 bg-[#0e111a] rounded-xl shadow-md">
+            <div
+              key={item.label}
+              className={`rounded-xl bg-[#0e111a] p-4 shadow-md ${
+                item.label === "Description" ? "sm:col-span-2 lg:col-span-4" : ""
+              }`}
+            >
               <p className="text-gray-400 text-sm">{item.label}</p>
-              <p className="text-white text-sm font-semibold">{item.value}</p>
+              <p className="wrap-break-word text-sm font-semibold text-white">{item.value}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="md:mb-10">
+      <div className="mb-2 sm:mb-10">
         <h2 className="text-2xl font-bold text-blue-500 mb-4">Recommended Stocks</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {relatedStocks.map((rel) => (
@@ -444,15 +443,15 @@ export default function StockPage() {
               href={`/stocks/${rel.symbol}`}
               className="p-4 bg-[#0e111a] rounded-xl shadow-md hover:shadow-lg transition-shadow flex flex-col hover:bg-[#141c2f] cursor-pointer"
             >
-              <div className="flex justify-between items-start mb-2">
-                <div className="min-h-12">
-                  <p className="text-white font-semibold break-words leading-snug">
+              <div className="mb-2 flex items-start justify-between gap-3">
+                <div className="min-h-12 min-w-0">
+                  <p className="line-clamp-2 wrap-break-word font-semibold leading-snug text-white">
                     {rel.name}
                   </p>
                   <p className="text-gray-400 text-sm">{rel.symbol}</p>
                 </div>
                 <div
-                  className={`font-bold ${
+                  className={`shrink-0 text-sm font-bold sm:text-base ${
                     rel.change >= 0 ? "text-green-500" : "text-red-500"
                   }`}
                 >

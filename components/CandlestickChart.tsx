@@ -125,14 +125,13 @@ export default function CandlestickChart() {
   }, [stockSymbol, interval, period, chartType]);
 
   return (
-    <div className="w-full h-96 sm:mb-20">
-      <div className="flex flex-row sm:justify-between sm:items-center mb-4 gap-2">
-
-        <div className="hidden sm:flex gap-2">
+    <div className="flex h-full min-h-0 w-full flex-col">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:mb-4">
+        <div className="hidden items-center gap-2 sm:flex">
           {intervalOptions.map((opt) => (
             <button
               key={opt.label}
-              className={`px-3 py-1 cursor-pointer rounded ${
+              className={`cursor-pointer rounded-md px-4 py-2 text-base font-semibold leading-none ${
                 selectedIntervalLabel === opt.label
                   ? "bg-blue-500 text-white"
                   : "bg-gray-700 text-gray-300"
@@ -148,38 +147,21 @@ export default function CandlestickChart() {
           ))}
         </div>
 
-        <select
-          className="sm:hidden w-16 px-3 py-2 rounded bg-gray-700 text-white"
-          value={selectedIntervalLabel}
-          onChange={(e) => {
-            const selected = intervalOptions.find((opt) => opt.label === e.target.value);
-            if (selected) {
-              setInterval(selected.interval);
-              setPeriod(selected.period);
-              setSelectedIntervalLabel(selected.label);
-            }
-          }}
-        >
-          {intervalOptions.map((opt) => (
-            <option key={opt.label} value={opt.label}>{opt.label}</option>
-          ))}
-        </select>
-
-        <div className="hidden sm:flex relative w-48 h-10 bg-gray-700 rounded-full cursor-pointer select-none"
+        <div className="relative hidden h-10 w-44 cursor-pointer select-none rounded-full bg-gray-700 sm:flex"
           onClick={() =>
             setChartType((prev) => (prev === "candlestick" ? "line" : "candlestick"))
           }
         >
           <div
-            className={`absolute left-0 w-1/2 h-10 bg-blue-500 rounded-full transition-transform duration-200 ${
+            className={`absolute left-0 h-10 w-1/2 rounded-full bg-blue-500 transition-transform duration-200 ${
               chartType === "line" ? "translate-x-full" : "translate-x-0"
             }`}
           />
-          <div className="flex w-full h-full z-10">
-            <div className="w-1/2 flex items-center justify-center font-semibold text-white">
+          <div className="z-10 flex h-full w-full">
+            <div className="flex w-1/2 items-center justify-center font-semibold text-white">
               Candle
             </div>
-            <div className={`w-1/2 flex items-center justify-center font-semibold transition-colors duration-200 ${
+            <div className={`flex w-1/2 items-center justify-center font-semibold transition-colors duration-200 ${
               chartType === "line" ? "text-black" : "text-white"
             }`}>
               Line
@@ -187,19 +169,40 @@ export default function CandlestickChart() {
           </div>
         </div>
 
-        <select
-          className="sm:hidden px-3 py-2 rounded bg-gray-700 text-white"
-          value={chartType}
-          onChange={(e) => setChartType(e.target.value as "candlestick" | "line")}
-        >
-          <option value="candlestick">Candle</option>
-          <option value="line">Line</option>
-        </select>
+        <div className="grid w-full grid-cols-2 gap-2 sm:hidden">
+          <select
+            aria-label="Select interval"
+            className="w-full rounded bg-gray-700 px-3 py-2 text-sm text-white"
+            value={selectedIntervalLabel}
+            onChange={(e) => {
+              const selected = intervalOptions.find((opt) => opt.label === e.target.value);
+              if (selected) {
+                setInterval(selected.interval);
+                setPeriod(selected.period);
+                setSelectedIntervalLabel(selected.label);
+              }
+            }}
+          >
+            {intervalOptions.map((opt) => (
+              <option key={opt.label} value={opt.label}>{opt.label}</option>
+            ))}
+          </select>
+
+          <select
+            aria-label="Select chart type"
+            className="w-full rounded bg-gray-700 px-3 py-2 text-sm text-white"
+            value={chartType}
+            onChange={(e) => setChartType(e.target.value as "candlestick" | "line")}
+          >
+            <option value="candlestick">Candle</option>
+            <option value="line">Line</option>
+          </select>
+        </div>
       </div>
 
       <div
         ref={chartContainerRef}
-        className="w-full h-64 sm:h-full rounded-xl border border-blue-500 shadow-md overflow-hidden"
+        className="min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-blue-500 shadow-md"
       />
     </div>
   );

@@ -14,6 +14,11 @@ type BillingCustomerRow = {
   stripe_customer_id: string;
 };
 
+type SubscriptionRow = {
+  tier: "free" | "plus" | "pro";
+  status: string;
+};
+
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
@@ -88,6 +93,47 @@ async function updateUserTierMetadata(userId: string, tier: "free" | "plus" | "p
   }
 }
 
+function resolveTierFromSubscription(subscription: StripeSubscription): "free" | "plus" | "pro" {
+  if (!(subscription.status === "active" || subscription.status === "trialing")) {
+    return "free";
+  }
+
+  const primaryPriceId = subscription.items.data[0]?.price?.id ?? null;
+  const mapped = mapPriceToTier(primaryPriceId);
+  if (mapped !== "free") return mapped;
+
+  const metadataPlan = subscription.metadata?.plan?.trim().toLowerCase();
+  if (metadataPlan === "pro") return "pro";
+  if (metadataPlan === "plus") return "plus";
+  return "free";
+}
+
+function maxTier(a: "free" | "plus" | "pro", b: "free" | "plus" | "pro"): "free" | "plus" | "pro" {
+  const rank = { free: 0, plus: 1, pro: 2 } as const;
+  return rank[a] >= rank[b] ? a : b;
+}
+
+async function recalculateAndSyncUserTier(userId: string, customerId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("user_subscriptions")
+    .select("tier,status")
+    .eq("user_id", userId);
+
+  if (error) {
+    throw new Error(`Failed to load user subscriptions: ${error.message}`);
+  }
+
+  const rows = (data ?? []) as SubscriptionRow[];
+  let effectiveTier: "free" | "plus" | "pro" = "free";
+
+  for (const row of rows) {
+    if (row.status !== "active" && row.status !== "trialing") continue;
+    effectiveTier = maxTier(effectiveTier, row.tier);
+  }
+
+  await updateUserTierMetadata(userId, effectiveTier, customerId);
+}
+
 export async function upsertSubscriptionFromStripe(subscription: StripeSubscription) {
   const customerId = normalizeStripeId(subscription.customer);
   if (!customerId) {
@@ -103,9 +149,7 @@ export async function upsertSubscriptionFromStripe(subscription: StripeSubscript
   }
 
   const primaryPriceId = subscription.items.data[0]?.price?.id ?? null;
-  const tier = subscription.status === "active" || subscription.status === "trialing"
-    ? mapPriceToTier(primaryPriceId)
-    : "free";
+  const tier = resolveTierFromSubscription(subscription);
 
   const { error: customerUpsertError } = await supabaseAdmin.from("billing_customers").upsert(
     {
@@ -143,7 +187,7 @@ export async function upsertSubscriptionFromStripe(subscription: StripeSubscript
     throw new Error(`Failed to sync subscription: ${subscriptionError.message}`);
   }
 
-  await updateUserTierMetadata(userId, tier, customerId);
+  await recalculateAndSyncUserTier(userId, customerId);
 }
 
 export async function markCustomerAsFree(customerId: string) {
@@ -159,7 +203,7 @@ export async function markCustomerAsFree(customerId: string) {
     throw new Error(`Failed to mark subscription as free: ${error.message}`);
   }
 
-  await updateUserTierMetadata(userId, "free", customerId);
+  await recalculateAndSyncUserTier(userId, customerId);
 }
 
 export async function logBillingError(context: string, err: unknown) {
