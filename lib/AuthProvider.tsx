@@ -16,17 +16,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-    });
+    let isMounted = true;
+
+    const syncAuth = async (nextSession?: Session | null) => {
+      const sessionToUse = typeof nextSession === "undefined"
+        ? (await supabase.auth.getSession()).data.session
+        : nextSession;
+
+      if (!isMounted) return;
+      setSession(sessionToUse);
+
+      if (!sessionToUse) {
+        setUser(null);
+        return;
+      }
+
+      // Fetch fresh user metadata so plan/tier badges stay accurate after billing changes.
+      const { data } = await supabase.auth.getUser();
+      if (!isMounted) return;
+      setUser(data.user ?? sessionToUse.user ?? null);
+    };
+
+    void syncAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      void syncAuth(session);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
