@@ -12,7 +12,7 @@ services:
       - key: FMP_API_KEY
         sync: false
       - key: FRONTEND_ORIGINS
-        sync: false
+        value: https://xtract.top
       - key: FRONTEND_ORIGIN_REGEX
         value: https://.*\\.onrender\\.com
 
@@ -32,7 +32,7 @@ services:
       - key: STOCK_API_BASE_URL
         sync: false
       - key: NEXT_PUBLIC_APP_URL
-        sync: false
+        value: https://xtract.top
       - key: NEXT_PUBLIC_SUPABASE_URL
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY

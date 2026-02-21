@@ -16,7 +16,7 @@ app = FastAPI(title="Stock API")
 
 def parse_origins(value: str | None) -> list[str]:
     if not value:
-        return ["http://localhost:3000"]
+        return ["https://xtract.top", "http://localhost:3000"]
     return [origin.strip() for origin in value.split(",") if origin.strip()]
 
 
